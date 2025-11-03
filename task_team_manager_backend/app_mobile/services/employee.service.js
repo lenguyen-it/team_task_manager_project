@@ -141,7 +141,7 @@ class EmployeeService {
     });
   }
 
-  async deleteByEmloyeeId(employee_id) {
+  async deleteByEmployeeId(employee_id) {
     const result = await this.Employee.findOneAndDelete({
       employee_id: employee_id,
     });

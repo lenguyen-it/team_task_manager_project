@@ -7,7 +7,7 @@ exports.create = async (req, res, next) => {
   console.log("req.file:", req.file);
 
   if (!req.body?.employee_id && !req.body.employee_name) {
-    return next(new ApiError(400, "Emloyee id and name cannot be empty"));
+    return next(new ApiError(400, "Employee id and name cannot be empty"));
   }
 
   try {
@@ -154,7 +154,7 @@ exports.delete = async (req, res, next) => {
 exports.deleteByEmployeeId = async (req, res, next) => {
   try {
     const employeeService = new EmployeeService(MongoDB.client);
-    const deleted = await employeeService.deleteByEmloyeeId(
+    const deleted = await employeeService.deleteByEmployeeId(
       req.params.employee_id
     );
 
