@@ -1,12 +1,26 @@
-const express = require('express');
+const express = require("express");
+const path = require("path");
+const cors = require("cors");
+
 const ApiError = require("./app_mobile/api-error");
-
-
 
 const app = express();
 
-// app.use(cors());
+const ProjectRoute = require("./app_mobile/routes/project.route");
+const TaskRoute = require("./app_mobile/routes/task.route");
+const TaskTypeRoute = require("./app_mobile/routes/tasktype.route");
+const EmployeeRoute = require("./app_mobile/routes/employee.route");
+const RoleRoute = require("./app_mobile/routes/role.route");
+
+app.use(cors());
 app.use(express.json());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/projects", ProjectRoute);
+app.use("/api/employee", EmployeeRoute);
+app.use("/api/tasks", TaskRoute);
+app.use("/api/tasktype", TaskTypeRoute);
+app.use("/api/roles", RoleRoute);
 
 app.use((req, res, next) => {
   return next(new ApiError(404, "Resource not found"));
@@ -18,10 +32,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.get('/', (req, res) => {
-	res.json({ message: "Welcome to connect Server" });
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to connect Server" });
 });
-
-
 
 module.exports = app;
