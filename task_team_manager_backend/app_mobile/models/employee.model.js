@@ -26,6 +26,11 @@ const employeeSchema = mongoose.Schema({
   phone: {
     type: Number,
   },
+
+  image: {
+    type: String,
+    default: "",
+  },
 });
 
 const Employee = mongoose.model("Employee", employeeSchema);
