@@ -20,3 +20,5 @@ router
   .get(ProjectController.findOne)
   .put(ProjectController.update)
   .delete(ProjectController.delete);
+
+module.exports = router;

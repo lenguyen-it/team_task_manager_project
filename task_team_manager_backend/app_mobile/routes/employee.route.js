@@ -19,4 +19,6 @@ router
   .route("/:id")
   .get(EmployeeController.findOne)
   .put(EmployeeController.update)
-  .delete(RoleContEmployeeControllerroller.delete);
+  .delete(EmployeeController.delete);
+
+module.exports = router;

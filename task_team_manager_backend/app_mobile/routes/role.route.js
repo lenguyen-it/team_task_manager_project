@@ -20,3 +20,5 @@ router
   .get(RoleController.findOne)
   .put(RoleController.update)
   .delete(RoleController.delete);
+
+module.exports = router;

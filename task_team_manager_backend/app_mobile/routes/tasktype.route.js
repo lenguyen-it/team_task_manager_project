@@ -20,3 +20,5 @@ router
   .get(TaskTypeController.findOne)
   .put(TaskTypeController.update)
   .delete(TaskTypeController.delete);
+
+module.exports = router;
