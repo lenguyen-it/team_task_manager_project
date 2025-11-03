@@ -42,6 +42,23 @@ exports.findAll = async (req, res, next) => {
   return res.send(data);
 };
 
+exports.findOne = async (req, res, next) => {
+  try {
+    const employeeService = new EmployeeService(MongoDB.client);
+    const employee = await employeeService.findById(req.params.id);
+
+    if (!employee) {
+      return next(new ApiError(404, "Employee not found"));
+    }
+
+    return res.send(employee);
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error retrieving employee: " + error.message)
+    );
+  }
+};
+
 exports.findByEmployeeId = async (req, res, next) => {
   try {
     const employeeService = new EmployeeService(MongoDB.client);

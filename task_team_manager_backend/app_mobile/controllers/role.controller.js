@@ -35,6 +35,21 @@ exports.findAll = async (req, res, next) => {
   return res.send(data);
 };
 
+exports.findOne = async (req, res, next) => {
+  try {
+    const roleService = new RoleService(MongoDB.client);
+    const role = await roleService.findById(req.params.id);
+
+    if (!role) {
+      return next(new ApiError(404, "Role not found"));
+    }
+
+    return res.send(role);
+  } catch (error) {
+    return next(new ApiError(500, "Error retrieving role: " + error.message));
+  }
+};
+
 exports.findByRoleId = async (req, res, next) => {
   try {
     const roleService = new RoleService(MongoDB.client);

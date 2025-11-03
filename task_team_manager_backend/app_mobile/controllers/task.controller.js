@@ -46,6 +46,21 @@ exports.findByTaskId = async (req, res, next) => {
   }
 };
 
+exports.findOne = async (req, res, next) => {
+  try {
+    const taskService = new TaskService(MongoDB.client);
+    const task = await taskService.findById(req.params.id);
+
+    if (!task) {
+      return next(new ApiError(404, "Task not found"));
+    }
+
+    return res.send(task);
+  } catch (error) {
+    return next(new ApiError(500, "Error retrieving task: " + error.message));
+  }
+};
+
 exports.findByTaskName = async (req, res, next) => {
   try {
     const taskService = new TaskService(MongoDB.client);

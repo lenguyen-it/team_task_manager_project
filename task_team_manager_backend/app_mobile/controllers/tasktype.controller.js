@@ -40,6 +40,23 @@ exports.findAll = async (req, res, next) => {
   return res.send(data);
 };
 
+exports.findOne = async (req, res, next) => {
+  try {
+    const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskType = await taskTypeService.findById(req.params.id);
+
+    if (!taskType) {
+      return next(new ApiError(404, "Task Type not found"));
+    }
+
+    return res.send(taskType);
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error retrieving task type: " + error.message)
+    );
+  }
+};
+
 exports.findByTaskTypeId = async (req, res, next) => {
   try {
     const taskTypeService = new TaskTypeService(MongoDB.client);

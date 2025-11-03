@@ -40,6 +40,23 @@ exports.findAll = async (req, res, next) => {
   return res.send(data);
 };
 
+exports.findOne = async (req, res, next) => {
+  try {
+    const projectService = new ProjectService(MongoDB.client);
+    const project = await projectService.findById(req.params.id);
+
+    if (!project) {
+      return next(new ApiError(404, "Project not found"));
+    }
+
+    return res.send(project);
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error retrieving project: " + error.message)
+    );
+  }
+};
+
 exports.findByProjectId = async (req, res, next) => {
   try {
     const projectService = new ProjectService(MongoDB.client);
