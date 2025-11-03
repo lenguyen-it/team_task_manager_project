@@ -32,6 +32,12 @@ class RoleService {
     return await this.Role.find({}).toArray();
   }
 
+  async findById(id) {
+    return await this.User.findOne({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
+  }
+
   async findByRoleId(role_id) {
     return await this.Role.findOne({ role_id: role_id });
   }

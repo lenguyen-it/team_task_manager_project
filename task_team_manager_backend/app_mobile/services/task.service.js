@@ -40,6 +40,12 @@ class TaskService {
     return await this.Task.find({}).toArray();
   }
 
+  async findById(id) {
+    return await this.User.findOne({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
+  }
+
   async findByTaskId(task_id) {
     return await this.Task.findOne({ task_id: task_id });
   }

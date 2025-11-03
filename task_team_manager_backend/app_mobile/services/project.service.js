@@ -35,6 +35,12 @@ class ProjectService {
     return await this.Project.find({}).toArray();
   }
 
+  async findById(id) {
+    return await this.User.findOne({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
+  }
+
   async findByProjectId(project_id) {
     return await this.Project.findOne({ project_id: project_id });
   }

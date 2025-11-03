@@ -55,6 +55,12 @@ class EmployeeService {
     return await this.Employee.find({}).toArray();
   }
 
+  async findById(id) {
+    return await this.User.findOne({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
+  }
+
   async findByEmployeeId(employee_id) {
     return await this.Employee.findOne({ employee_id: employee_id });
   }
