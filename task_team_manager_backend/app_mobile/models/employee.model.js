@@ -31,6 +31,11 @@ const employeeSchema = mongoose.Schema({
     type: String,
     default: "",
   },
+
+  password: {
+    type: String,
+    required: [true, "Password is required"],
+  },
 });
 
 const Employee = mongoose.model("Employee", employeeSchema);
