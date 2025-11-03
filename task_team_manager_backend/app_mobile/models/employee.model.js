@@ -32,7 +32,7 @@ const employeeSchema = mongoose.Schema({
     default: "",
   },
 
-  password: {
+  employee_password: {
     type: String,
     required: [true, "Password is required"],
   },
