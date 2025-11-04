@@ -11,6 +11,7 @@ const TaskRoute = require("./app_mobile/routes/task.route");
 const TaskTypeRoute = require("./app_mobile/routes/tasktype.route");
 const EmployeeRoute = require("./app_mobile/routes/employee.route");
 const RoleRoute = require("./app_mobile/routes/role.route");
+const AuthRoutes = require("./app_mobile/routes/auth.route");
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use("/api/employees", EmployeeRoute);
 app.use("/api/tasks", TaskRoute);
 app.use("/api/tasktypes", TaskTypeRoute);
 app.use("/api/roles", RoleRoute);
+app.use("/api/auth", AuthRoutes);
 
 app.use((req, res, next) => {
   return next(new ApiError(404, "Resource not found"));
