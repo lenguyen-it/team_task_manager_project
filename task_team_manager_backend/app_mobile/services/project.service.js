@@ -42,7 +42,9 @@ class ProjectService {
   }
 
   async findByProjectId(project_id) {
-    return await this.Project.findOne({ project_id: project_id });
+    return await this.Project.findOne({
+      project_id: { $regex: `^${project_id}$`, $options: "i" },
+    });
   }
 
   async findByProjectName(project_name) {

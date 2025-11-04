@@ -47,7 +47,9 @@ class TaskService {
   }
 
   async findByTaskId(task_id) {
-    return await this.Task.findOne({ task_id: task_id });
+    return await this.Task.findOne({
+      task_id: { $regex: `^${task_id}$`, $options: "i" },
+    });
   }
 
   async findByTaskName(task_name) {

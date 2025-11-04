@@ -39,7 +39,9 @@ class TaskTypeService {
   }
 
   async findByTaskTypeId(task_type_id) {
-    return await this.TaskType.findOne({ task_type_id: task_type_id });
+    return await this.TaskType.findOne({
+      task_type_id: { $regex: `^${task_type_id}$`, $options: "i" },
+    });
   }
 
   async findByTaskTypeName(task_type_name) {

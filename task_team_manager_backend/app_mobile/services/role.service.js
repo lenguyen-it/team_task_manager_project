@@ -39,7 +39,9 @@ class RoleService {
   }
 
   async findByRoleId(role_id) {
-    return await this.Role.findOne({ role_id: role_id });
+    return await this.Role.findOne({
+      role_id: { $regex: `^${role_id}$`, $options: "i" },
+    });
   }
 
   async findByRoleName(role_name) {
@@ -85,3 +87,5 @@ class RoleService {
     return (await this.Role.deleteMany({})).deletedCount;
   }
 }
+
+module.exports = RoleService;

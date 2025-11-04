@@ -62,7 +62,9 @@ class EmployeeService {
   }
 
   async findByEmployeeId(employee_id) {
-    return await this.Employee.findOne({ employee_id: employee_id });
+    return await this.Employee.findOne({
+      employee_id: { $regex: `^${employee_id}$`, $options: "i" },
+    });
   }
 
   async findByEmployeeName(employee_name) {
