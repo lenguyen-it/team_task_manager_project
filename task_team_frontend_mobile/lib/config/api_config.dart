@@ -1,130 +1,160 @@
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:task_team_frontend_mobile/config/env.dart';
 
 class ApiConfig {
-  static String baseUrl = Env.baseUrl;
+  // static String baseUrl = Env.baseUrl;
+
+  //Kiểm tra xem là trên thiết bị thật hay là trên emulator
+  static Future<String> getUrl() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+
+      final isEmulator = !androidInfo.isPhysicalDevice;
+
+      if (isEmulator) {
+        return Env.baseUrl;
+      } else {
+        return Env.localUrl;
+      }
+    } else if (Platform.isIOS) {
+      final deviceInfo = DeviceInfoPlugin();
+      final iosInfo = await deviceInfo.iosInfo;
+
+      final isEmulator = !iosInfo.isPhysicalDevice;
+      if (isEmulator) {
+        return Env.baseUrl;
+      } else {
+        return Env.localUrl;
+      }
+    } else {
+      throw UnsupportedError('Unsupported platform');
+    }
+  }
 
   //=====API TASK=======
   static String get createTask {
-    return '$baseUrl/tasks';
+    return '$getUrl/tasks';
   }
 
   static String get getAllTask {
-    return '$baseUrl/tasks';
+    return '$getUrl/tasks';
   }
 
   static String getTaskById(String taskId) {
-    return '$baseUrl/tasks/$taskId';
+    return '$getUrl/tasks/$taskId';
   }
 
   static String updateTask(String taskId) {
-    return '$baseUrl/tasks/$taskId';
+    return '$getUrl/tasks/$taskId';
   }
 
   static String deleteTask(String taskId) {
-    return '$baseUrl/tasks/$taskId';
+    return '$getUrl/tasks/$taskId';
   }
 
   static String get deleteAllTask {
-    return '$baseUrl/tasks';
+    return '$getUrl/tasks';
   }
 
   //========API TASK TYPE ============
   static String get createTaskType {
-    return '$baseUrl/tasktypes';
+    return '$getUrl/tasktypes';
   }
 
   static String get getAllTaskType {
-    return '$baseUrl/tasktypes';
+    return '$getUrl/tasktypes';
   }
 
   static String getTaskTypeById(String tasktypeId) {
-    return '$baseUrl/tasktypes/$tasktypeId';
+    return '$getUrl/tasktypes/$tasktypeId';
   }
 
   static String updateTaskType(String tasktypeId) {
-    return '$baseUrl/tasktypes/$tasktypeId';
+    return '$getUrl/tasktypes/$tasktypeId';
   }
 
   static String deleteTaskType(String tasktypeId) {
-    return '$baseUrl/tasktypes/$tasktypeId';
+    return '$getUrl/tasktypes/$tasktypeId';
   }
 
   static String get deleteAllTaskType {
-    return '$baseUrl/tasktypes';
+    return '$getUrl/tasktypes';
   }
 
   //========API EMPLOYEE=============
   static String get createEmployee {
-    return '$baseUrl/employees';
+    return '$getUrl/employees';
   }
 
   static String get getAllEmployee {
-    return '$baseUrl/employees';
+    return '$getUrl/employees';
   }
 
   static String getEmployeeById(String employeeId) {
-    return '$baseUrl/employees/$employeeId';
+    return '$getUrl/employees/$employeeId';
   }
 
   static String updateEmployee(String employeeId) {
-    return '$baseUrl/employees/$employeeId';
+    return '$getUrl/employees/$employeeId';
   }
 
   static String deleteEmployee(String employeeId) {
-    return '$baseUrl/employees/$employeeId';
+    return '$getUrl/employees/$employeeId';
   }
 
   static String get deleteAllEmployee {
-    return '$baseUrl/employees';
+    return '$getUrl/employees';
   }
 
   //========API PROJECT==============
   static String get createProject {
-    return '$baseUrl/projects';
+    return '$getUrl/projects';
   }
 
   static String get getAllProject {
-    return '$baseUrl/projects';
+    return '$getUrl/projects';
   }
 
   static String getProjectById(String projectId) {
-    return '$baseUrl/projects/$projectId';
+    return '$getUrl/projects/$projectId';
   }
 
   static String updateProject(String projectId) {
-    return '$baseUrl/projects/$projectId';
+    return '$getUrl/projects/$projectId';
   }
 
   static String deleteProject(String projectId) {
-    return '$baseUrl/projects/$projectId';
+    return '$getUrl/projects/$projectId';
   }
 
   static String get deleteAllProject {
-    return '$baseUrl/projects';
+    return '$getUrl/projects';
   }
 
   //========API ROLE=================
   static String get createRole {
-    return '$baseUrl/roles';
+    return '$getUrl/roles';
   }
 
   static String get getAllRole {
-    return '$baseUrl/roles';
+    return '$getUrl/roles';
   }
 
   static String getRoleById(String roleId) {
-    return '$baseUrl/roles/$roleId';
+    return '$getUrl/roles/$roleId';
   }
 
   static String updateRole(String roleId) {
-    return '$baseUrl/roles/$roleId';
+    return '$getUrl/roles/$roleId';
   }
 
   static String deleteRole(String roleId) {
-    return '$baseUrl/roles/$roleId';
+    return '$getUrl/roles/$roleId';
   }
 
   static String get deleteAllRole {
-    return '$baseUrl/roles';
+    return '$getUrl/roles';
   }
 }
