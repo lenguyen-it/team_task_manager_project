@@ -22,10 +22,10 @@ class EmployeeModel {
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
     return EmployeeModel(
       id: json['_id']?.toString(),
-      employeeId: json['employee_id'] ?? '',
-      employeeName: json['employee_name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
+      employeeId: json['employee_id'].toString(),
+      employeeName: json['employee_name'].toString(),
+      email: json['email'].toString(),
+      phone: json['phone'].toString(),
       image: json['image'],
       roleId: json['role_id'] is Map
           ? RoleModel.fromJson(json['role_id'])

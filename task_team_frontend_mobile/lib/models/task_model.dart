@@ -67,8 +67,8 @@ class TaskModel {
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
       id: json['_id']?.toString(),
-      taskId: json['task_id'] ?? '',
-      taskName: json['task_name'] ?? '',
+      taskId: json['task_id'].toString(),
+      taskName: json['task_name'].toString(),
       description: json['description'],
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'])
