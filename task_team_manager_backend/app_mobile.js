@@ -17,9 +17,9 @@ app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/projects", ProjectRoute);
-app.use("/api/employee", EmployeeRoute);
+app.use("/api/employees", EmployeeRoute);
 app.use("/api/tasks", TaskRoute);
-app.use("/api/tasktype", TaskTypeRoute);
+app.use("/api/tasktypes", TaskTypeRoute);
 app.use("/api/roles", RoleRoute);
 
 app.use((req, res, next) => {
