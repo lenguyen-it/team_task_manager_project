@@ -1,37 +1,9 @@
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:task_team_frontend_mobile/config/env.dart';
 
 class ApiConfig {
-  // static String baseUrl = Env.baseUrl;
+  // static String getUrl = Env.baseUrl;
 
-  //Kiểm tra xem là trên thiết bị thật hay là trên emulator
-  static Future<String> getUrl() async {
-    if (Platform.isAndroid) {
-      final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
-
-      final isEmulator = !androidInfo.isPhysicalDevice;
-
-      if (isEmulator) {
-        return Env.baseUrl;
-      } else {
-        return Env.localUrl;
-      }
-    } else if (Platform.isIOS) {
-      final deviceInfo = DeviceInfoPlugin();
-      final iosInfo = await deviceInfo.iosInfo;
-
-      final isEmulator = !iosInfo.isPhysicalDevice;
-      if (isEmulator) {
-        return Env.baseUrl;
-      } else {
-        return Env.localUrl;
-      }
-    } else {
-      throw UnsupportedError('Unsupported platform');
-    }
-  }
+  static String getUrl = Env.localUrl;
 
   //=====API TASK=======
   static String get createTask {
