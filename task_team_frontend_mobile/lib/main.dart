@@ -25,11 +25,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => RoleProvider()),
-        ChangeNotifierProvider(create: (_) => ProjectProvider()),
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => TasktypeProvider()),
-        ChangeNotifierProvider(create: (_) => EmployeeProvider()),
+        ChangeNotifierProvider(create: (context) => RoleProvider()),
+        ChangeNotifierProvider(create: (context) => ProjectProvider()),
+        ChangeNotifierProvider(create: (context) => TaskProvider()),
+        ChangeNotifierProvider(create: (context) => TasktypeProvider()),
+        ChangeNotifierProvider(create: (context) => EmployeeProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,10 +38,9 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
         ),
-        home:
-            // const RoleScreen(),
-            // const ProjectScreen(),
-            const TaskScreen(),
+        home: const RoleScreen(),
+        // const ProjectScreen(),
+        // const TaskScreen(),
         // const TasktypeScreen(),
         // const EmployeeScreen(),
       ),
