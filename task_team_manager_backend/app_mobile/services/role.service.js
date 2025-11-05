@@ -67,7 +67,7 @@ class RoleService {
       { $set: updateData },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   async delete(id) {
@@ -80,7 +80,7 @@ class RoleService {
     const result = await this.Role.findOneAndDelete({
       role_id: role_id,
     });
-    return result.value;
+    return result;
   }
 
   async deleteAll() {

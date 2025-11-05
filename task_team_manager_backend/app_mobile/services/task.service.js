@@ -76,7 +76,7 @@ class TaskService {
       { $set: update },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   async delete(id) {
@@ -87,7 +87,7 @@ class TaskService {
 
   async deleteByTaskId(task_id) {
     const result = await this.Task.findOneAndDelete({ task_id: task_id });
-    return result.value;
+    return result;
   }
 
   async deleteAll() {

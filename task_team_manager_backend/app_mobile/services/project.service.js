@@ -71,7 +71,7 @@ class ProjectService {
       { $set: updateData },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   async delete(id) {
@@ -84,7 +84,7 @@ class ProjectService {
     const result = await this.Project.findOneAndDelete({
       project_id: project_id,
     });
-    return result.value;
+    return result;
   }
 
   async deleteAll() {

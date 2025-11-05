@@ -67,7 +67,7 @@ class TaskTypeService {
       { $set: updateData },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   async delete(id) {
@@ -81,7 +81,7 @@ class TaskTypeService {
     const result = await this.TaskType.findOneAndDelete({
       task_type_id: task_type_id,
     });
-    return result.value;
+    return result;
   }
 
   async deleteAll() {
