@@ -1,6 +1,13 @@
+require("dotenv").config();
+
 const app = require("./app_mobile");
 const config = require("./app_mobile/config");
 const MongoDB = require("./app_mobile/utils/mongodb.util");
+
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL ERROR: JWT_SECRET is not defined.");
+  process.exit(1);
+}
 
 async function startServer() {
   try {
