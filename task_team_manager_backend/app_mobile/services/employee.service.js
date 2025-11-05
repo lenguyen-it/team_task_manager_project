@@ -42,7 +42,7 @@ class EmployeeService {
 
     employee.employee_password = await bcrypt.hash(
       employee.employee_password,
-      10
+      12
     );
     return await this.Employee.insertOne(employee);
   }
@@ -56,7 +56,7 @@ class EmployeeService {
   }
 
   async findById(id) {
-    return await this.User.findOne({
+    return await this.Employee.findOne({
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     });
   }
@@ -87,7 +87,7 @@ class EmployeeService {
     ) {
       payload.employee_password = await bcrypt.hash(
         payload.employee_password,
-        10
+        12
       );
     } else {
       payload.employee_password = existingEmployee.employee_password;
@@ -117,7 +117,7 @@ class EmployeeService {
     if (payload.employee_password) {
       payload.employee_password = await bcrypt.hash(
         payload.employee_password,
-        10
+        12
       );
     } else {
       payload.employee_password = existingEmployee.employee_password;
@@ -134,7 +134,7 @@ class EmployeeService {
       { $set: update },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   async delete(id) {
@@ -148,7 +148,7 @@ class EmployeeService {
       employee_id: employee_id,
     });
 
-    return result.value;
+    return result;
   }
 
   async deleteAll() {
