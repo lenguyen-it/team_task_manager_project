@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const tasktypeSchema = new mongoose.Schema({
   task_type_id: {
     type: String,
+    unique: true,
     required: [true, "Task Type id is required"],
   },
 

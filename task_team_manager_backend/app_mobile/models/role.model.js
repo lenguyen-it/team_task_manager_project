@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const roleSchema = new mongoose.Schema({
   role_id: {
     type: String,
+    unique: true,
     required: [true, "Role Id is required"],
   },
 

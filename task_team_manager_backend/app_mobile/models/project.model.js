@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const projectSchema = new mongoose.Schema({
   project_id: {
     type: String,
+    unique: true,
     required: [true, "ID project is required"],
   },
 
