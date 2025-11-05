@@ -1,17 +1,22 @@
+// auth.route.js
 const express = require("express");
+const authController = require("../controllers/auth.controller");
+const { verifyToken, authorize } = require("../middlewares/auth.middleware");
+const { uploadImage } = require("../services/employee.service");
+
 const router = express.Router();
 
-const { login, register } = require("../controllers/auth.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
-const roleMiddleware = require("../middlewares/role.middleware");
-
-router.post("/login", login);
+router.post("/login", authController.login);
 
 router.post(
   "/register",
-  authMiddleware,
-  roleMiddleware(["admin", "manager"]),
-  register
+  verifyToken,
+  authorize(["admin", "manager"]),
+  uploadImage.single("image"),
+  authController.register
 );
+
+// Có thể thêm endpoint khác nếu cần, ví dụ: /me để lấy info user hiện tại
+// router.get("/me", verifyToken, (req, res) => res.json(req.user));
 
 module.exports = router;
