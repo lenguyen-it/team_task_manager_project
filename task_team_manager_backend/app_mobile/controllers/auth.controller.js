@@ -1,89 +1,78 @@
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const Employee = require("../models/employee.model");
-const Role = require("../models/role.model");
+const bcrypt = require("bcrypt");
+const ApiError = require("../api-error");
+const MongoDB = require("../utils/mongodb.util");
+const { EmployeeService } = require("../services/employee.service");
 
-// ✅ Đăng nhập bằng employee_id
-exports.login = async (req, res) => {
+const secret = process.env.JWT_SECRET || "your_jwt_secret_key";
+const expiresIn = process.env.JWT_EXPIRES_IN || "24h";
+
+// Đăng nhập: Sử dụng employee_id và password
+exports.login = async (req, res, next) => {
+  const { employee_id, employee_password } = req.body;
+
+  if (!employee_id || !employee_password) {
+    return next(new ApiError(400, "Employee ID and password are required"));
+  }
+
   try {
-    const { employee_id, password } = req.body;
+    const employeeService = new EmployeeService(MongoDB.client);
+    const employee = await employeeService.findByEmployeeId(employee_id);
 
-    const employee = await Employee.findOne({ employee_id });
     if (!employee) {
-      return res.status(404).json({ message: "Không tìm thấy tài khoản." });
+      return next(new ApiError(404, "Employee not found"));
     }
 
-    const isMatch = await bcrypt.compare(password, employee.employee_password);
+    const isMatch = await bcrypt.compare(
+      employee_password,
+      employee.employee_password
+    );
     if (!isMatch) {
-      return res.status(400).json({ message: "Sai mật khẩu." });
+      return next(new ApiError(401, "Password is incorrect"));
     }
 
-    // Tìm Role theo role_id (string)
-    const role = await Role.findOne({ role_id: employee.role_id });
-
-    // Tạo token
+    // Tạo JWT chứa employee_id và role_id
     const token = jwt.sign(
-      { employee_id: employee.employee_id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { employee_id: employee.employee_id, role_id: employee.role_id },
+      secret,
+      { expiresIn }
     );
 
-    return res.status(200).json({
-      message: "Đăng nhập thành công.",
+    res.json({
       token,
       employee: {
         employee_id: employee.employee_id,
-        name: employee.employee_name,
-        role: role?.role_name || "Unknown",
+        role_id: employee.role_id,
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Lỗi máy chủ." });
+    return next(new ApiError(500, "Error logging in: " + error.message));
   }
 };
 
-// ✅ Đăng ký (chỉ role cao được phép)
-exports.register = async (req, res) => {
+// Đăng ký tài khoản mới (tạo employee mới)
+exports.register = async (req, res, next) => {
+  if (
+    !req.body?.employee_id ||
+    !req.body?.employee_name ||
+    !req.body?.employee_password ||
+    !req.body?.role_id ||
+    !req.body?.email
+  ) {
+    return next(new ApiError(400, "Required fields cannot be empty"));
+  }
+
   try {
-    const { employee_id, employee_name, role_id, email, phone, password } =
-      req.body;
+    const employeeService = new EmployeeService(MongoDB.client);
+    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    const employee = await employeeService.create(req.body, image);
 
-    // Kiểm tra role người tạo tài khoản (Admin/Manager)
-    const creator = req.employee;
-    const creatorRole = creator?.role_info?.role_id;
-
-    if (!["admin", "manager"].includes(creatorRole)) {
-      return res
-        .status(403)
-        .json({ message: "Bạn không có quyền tạo tài khoản mới." });
-    }
-
-    // Kiểm tra trùng employee_id
-    const existing = await Employee.findOne({ employee_id });
-    if (existing) {
-      return res.status(400).json({ message: "employee_id đã tồn tại." });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newEmployee = new Employee({
-      employee_id,
-      employee_name,
-      role_id,
-      email,
-      phone,
-      employee_password: hashedPassword,
-    });
-
-    await newEmployee.save();
-
-    res.status(201).json({
-      message: "Tạo tài khoản thành công.",
-      employee_id: newEmployee.employee_id,
-    });
+    res
+      .status(201)
+      .json({ message: "Employee registered successfully", employee });
   } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ message: "Lỗi máy chủ." });
+    return next(
+      new ApiError(500, "Error registering employee: " + error.message)
+    );
   }
 };
