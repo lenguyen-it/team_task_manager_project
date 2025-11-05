@@ -1,24 +1,41 @@
 const express = require("express");
 const TaskTypeController = require("../controllers/tasktype.controller");
+const { verifyToken, authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
 router
   .route("/")
-  .get(TaskTypeController.findAll)
-  .post(TaskTypeController.create)
-  .delete(TaskTypeController.deleteAll);
+  .get(verifyToken, authorize(["admin", "manager"]), TaskTypeController.findAll)
+  .post(verifyToken, authorize(["admin", "manager"]), TaskTypeController.create)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskTypeController.deleteAll
+  );
 
 router
   .route("/:task_type_id")
-  .get(TaskTypeController.findByTaskTypeId)
-  .put(TaskTypeController.updateByTaskTypeId)
-  .delete(TaskTypeController.deleteByTaskTypeId);
+  .get(verifyToken, TaskTypeController.findByTaskTypeId)
+  .put(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskTypeController.updateByTaskTypeId
+  )
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskTypeController.deleteByTaskTypeId
+  );
 
 router
   .route("/:id")
-  .get(TaskTypeController.findOne)
-  .put(TaskTypeController.update)
-  .delete(TaskTypeController.delete);
+  .get(verifyToken, TaskTypeController.findOne)
+  .put(verifyToken, authorize(["admin", "manager"]), TaskTypeController.update)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskTypeController.delete
+  );
 
 module.exports = router;

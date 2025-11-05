@@ -1,24 +1,33 @@
 const express = require("express");
 const TaskController = require("../controllers/task.controller");
+const { verifyToken, authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
 router
   .route("/")
-  .get(TaskController.findAll)
-  .post(TaskController.create)
-  .delete(TaskController.deleteAll);
+  .get(verifyToken, authorize(["admin", "manager"]), TaskController.findAll)
+  .post(verifyToken, authorize(["admin", "manager"]), TaskController.create)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskController.deleteAll
+  );
 
 router
   .route("/:task_id")
-  .get(TaskController.findByTaskId)
-  .put(TaskController.updateByTaskId)
-  .delete(TaskController.deleteByTaskId);
+  .get(verifyToken, TaskController.findByTaskId)
+  .put(verifyToken, TaskController.updateByTaskId)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    TaskController.deleteByTaskId
+  );
 
 router
   .route("/:id")
-  .get(TaskController.findOne)
-  .put(TaskController.update)
-  .delete(TaskController.delete);
+  .get(verifyToken, TaskController.findOne)
+  .put(verifyToken, TaskController.update)
+  .delete(verifyToken, authorize(["admin", "manager"]), TaskController.delete);
 
 module.exports = router;

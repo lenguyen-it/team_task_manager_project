@@ -1,24 +1,45 @@
 const express = require("express");
 const ProjectController = require("../controllers/project.controller");
+const { verifyToken, authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
 router
   .route("/")
-  .get(ProjectController.findAll)
-  .post(ProjectController.create)
-  .delete(ProjectController.deleteAll);
+  .get(
+    verifyToken,
+    authorize(["admin", "manager", "staff"]),
+    ProjectController.findAll
+  )
+  .post(verifyToken, authorize(["admin", "manager"]), ProjectController.create)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    ProjectController.deleteAll
+  );
 
 router
   .route("/:project_id")
-  .get(ProjectController.findByProjectId)
-  .put(ProjectController.updateByProjectId)
-  .delete(ProjectController.deleteByProjectId);
+  .get(verifyToken, ProjectController.findByProjectId)
+  .put(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    ProjectController.updateByProjectId
+  )
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    ProjectController.deleteByProjectId
+  );
 
 router
   .route("/:id")
-  .get(ProjectController.findOne)
-  .put(ProjectController.update)
-  .delete(ProjectController.delete);
+  .get(verifyToken, ProjectController.findOne)
+  .put(verifyToken, authorize(["admin", "manager"]), ProjectController.update)
+  .delete(
+    verifyToken,
+    authorize(["admin", "manager"]),
+    ProjectController.delete
+  );
 
 module.exports = router;
