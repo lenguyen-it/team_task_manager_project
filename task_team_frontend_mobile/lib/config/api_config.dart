@@ -129,4 +129,14 @@ class ApiConfig {
   static String get deleteAllRole {
     return '$getUrl/roles';
   }
+
+  //========Login và các quyền aip khác ==============
+
+  static String get login {
+    return '$getUrl/auth/login';
+  }
+
+  static String get resgiter {
+    return '$getUrl/auth/resgister';
+  }
 }
