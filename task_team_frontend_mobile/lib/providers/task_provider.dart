@@ -14,18 +14,19 @@ class TaskProvider with ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  List<String> get taskNames => _tasks.map((r) => r.taskName).toList();
+  List<String> get taskNames => _tasks.map((t) => t.taskName).toList();
+  List<String> get taskIds => _tasks.map((t) => t.taskId).toList();
 
-  Future<void> getAllRole() async {
+  Future<void> getAllTask({required String token}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final data = await _taskService.getAllTask();
+      final data = await _taskService.getAllTask(token);
       _tasks = data;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();
