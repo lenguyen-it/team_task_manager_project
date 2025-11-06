@@ -36,6 +36,7 @@ class TasktypeModel {
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'task_type_id': tasktypeId,
       'task_type_name': tasktypeName,
       'description': description,

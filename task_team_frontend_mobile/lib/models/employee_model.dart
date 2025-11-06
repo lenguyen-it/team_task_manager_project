@@ -20,6 +20,10 @@ class EmployeeModel {
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
+    print('═══════════════════════════════════════');
+    print('Full JSON: $json');
+    print('═══════════════════════════════════════');
+
     return EmployeeModel(
       id: json['_id']?.toString(),
       employeeId: json['employee_id'].toString(),
@@ -39,6 +43,7 @@ class EmployeeModel {
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'employee_id': employeeId,
       'employee_name': employeeName,
       'email': email,

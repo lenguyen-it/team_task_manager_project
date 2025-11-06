@@ -36,6 +36,7 @@ class RoleModel {
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'role_id': roleId,
       'role_name': roleName,
       'description': description,
