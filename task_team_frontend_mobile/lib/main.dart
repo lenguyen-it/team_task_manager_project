@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/providers/project_provider.dart';
 
 import 'package:task_team_frontend_mobile/providers/role_provider.dart';
 import 'package:task_team_frontend_mobile/providers/task_provider.dart';
 import 'package:task_team_frontend_mobile/providers/tasktype_provider.dart';
+import 'package:task_team_frontend_mobile/screens/login_screen.dart';
+
 import 'package:task_team_frontend_mobile/screens/employee_screen.dart';
 import 'package:task_team_frontend_mobile/screens/project_screen.dart';
 import 'package:task_team_frontend_mobile/screens/role_screen.dart';
@@ -30,6 +33,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TaskProvider()),
         ChangeNotifierProvider(create: (context) => TasktypeProvider()),
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,7 +42,8 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
         ),
-        home: const RoleScreen(),
+        home: const LoginScreen(),
+        // const RoleScreen(),
         // const ProjectScreen(),
         // const TaskScreen(),
         // const TasktypeScreen(),
