@@ -19,6 +19,7 @@ class TaskModel {
   final ProjectModel projectId;
   final TasktypeModel tasktypeId;
   final List<EmployeeModel> assignedTo;
+  String? projectName;
 
   TaskModel({
     this.id,
@@ -33,6 +34,7 @@ class TaskModel {
     required this.projectId,
     required this.tasktypeId,
     required this.assignedTo,
+    this.projectName,
   }) : startDate = startDate ?? DateTime.now();
 
   TaskModel copyWith({
@@ -48,6 +50,7 @@ class TaskModel {
     ProjectModel? projectId,
     TasktypeModel? tasktypeId,
     List<EmployeeModel>? assignedTo,
+    String? projectName,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -62,6 +65,7 @@ class TaskModel {
       projectId: projectId ?? this.projectId,
       tasktypeId: tasktypeId ?? this.tasktypeId,
       assignedTo: assignedTo ?? this.assignedTo,
+      projectName: projectName ?? this.projectName,
     );
   }
 
@@ -102,6 +106,8 @@ class TaskModel {
 
       // Xử lý assigned_to - parse cả Map và String
       assignedTo: _parseAssignedTo(json['assigned_to']),
+
+      projectName: json['projectName'],
     );
   }
 
