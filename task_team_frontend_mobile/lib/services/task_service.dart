@@ -5,19 +5,28 @@ import 'package:task_team_frontend_mobile/config/api_config.dart';
 import 'package:task_team_frontend_mobile/models/task_model.dart';
 
 class TaskService {
-  Future<List<TaskModel>> getAllTask() async {
+  Future<List<TaskModel>> getAllTask(String token) async {
     try {
-      final response = await http.get(Uri.parse(ApiConfig.getAllTask));
-      print('Response body: \\n${response.body}');
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
+      final response = await http.get(
+        Uri.parse(ApiConfig.getAllTask),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('GET ALL TASK - Status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final List data = json.decode(response.body);
         return data.map((e) => TaskModel.fromJson(e)).toList();
       } else {
-        throw Exception(
-            'Không tải được danh sách vai trò (status ${response.statusCode})');
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Không tải được danh sách vai trò');
       }
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi: $e');
+      throw Exception('Lỗi khi lấy danh sách task: $e');
     }
   }
 }
