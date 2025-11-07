@@ -6,7 +6,7 @@ const router = express.Router();
 
 router
   .route("/")
-  .get(verifyToken, authorize(["admin", "manager"]), TaskTypeController.findAll)
+  .get(verifyToken, TaskTypeController.findAll)
   .post(verifyToken, authorize(["admin", "manager"]), TaskTypeController.create)
   .delete(
     verifyToken,
