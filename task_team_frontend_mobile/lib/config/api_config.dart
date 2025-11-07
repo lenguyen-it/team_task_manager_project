@@ -18,6 +18,10 @@ class ApiConfig {
     return '$getUrl/tasks/$taskId';
   }
 
+  static String getTaskByEmployee(String employeeId) {
+    return '$getUrl/tasks/employee/$employeeId';
+  }
+
   static String updateTask(String taskId) {
     return '$getUrl/tasks/$taskId';
   }
