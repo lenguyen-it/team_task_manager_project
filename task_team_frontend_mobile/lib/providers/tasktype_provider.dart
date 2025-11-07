@@ -49,6 +49,14 @@ class TasktypeProvider with ChangeNotifier {
     }
   }
 
+  String? getTasktypeNameById(String id) {
+    try {
+      return _tasktypes.firstWhere((e) => e.tasktypeId == id).tasktypeName;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> createTaskType(TasktypeModel tasktype, String token) async {
     _isLoading = true;
     _error = null;

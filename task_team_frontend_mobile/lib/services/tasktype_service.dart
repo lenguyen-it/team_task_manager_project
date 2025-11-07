@@ -15,7 +15,7 @@ class TasktypeService {
         },
       );
 
-      print('GET ALL EMPLOYEES - Status: ${response.statusCode}');
+      print('GET ALL TaskType - Status: ${response.statusCode}');
       print('Response body: \\n${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
