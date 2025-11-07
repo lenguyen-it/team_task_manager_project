@@ -51,6 +51,10 @@ class EmployeeProvider with ChangeNotifier {
   }
 
   Future<bool> createEmployee(EmployeeModel employee, String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       final newEmployee =
           await _employeeService.createEmployee(employee, token);
@@ -66,6 +70,9 @@ class EmployeeProvider with ChangeNotifier {
 
   Future<bool> updateEmployee(
       String employeeId, EmployeeModel updateEmployee, String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
     try {
       final employee = await _employeeService.updateEmployee(
           employeeId, updateEmployee, token);
@@ -83,11 +90,36 @@ class EmployeeProvider with ChangeNotifier {
   }
 
   Future<bool> deleteEmployee(String employeeId, String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       await _employeeService.deleteEmployee(employeeId, token);
       _employees.removeWhere((e) => e.employeeId == employeeId);
       return true;
     } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAllEmployee(String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _employeeService.deleteAllEmployee(token);
+
+      _employees.clear();
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
       _error = e.toString();
       notifyListeners();
       return false;

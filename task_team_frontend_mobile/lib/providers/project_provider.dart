@@ -50,14 +50,13 @@ class ProjectProvider with ChangeNotifier {
 
   Future<String> getProjectNameById(String projectId, String token) async {
     try {
-      // Nếu trong cache (_projects) đã có dự án → trả nhanh
       final existingProject = _projects.firstWhere(
         (p) => p.projectId == projectId,
         orElse: () => ProjectModel(
           projectId: '',
           projectName: '',
           description: '',
-          status: 'plannign',
+          status: 'planning',
         ),
       );
 
@@ -65,14 +64,95 @@ class ProjectProvider with ChangeNotifier {
         return existingProject.projectName;
       }
 
-      // Nếu chưa có thì gọi API
       final projectName =
           await _projectService.getProjectNameById(projectId, token);
       return projectName;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return 'Không tìm thấy ($projectId)';
     }
+  }
+
+  Future<bool> createProject(ProjectModel project, String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final newProject = await _projectService.createProject(project, token);
+      _projects.add(newProject);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateProject(
+      String projectId, ProjectModel updateProject, String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final project =
+          await _projectService.updateProject(projectId, updateProject, token);
+      final idx = _projects.indexWhere((e) => e.projectId == projectId);
+      if (idx != -1) {
+        _projects[idx] = project;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteProject(String projectId, String token) async {
+    try {
+      await _projectService.deleteProject(projectId, token);
+      _projects.removeWhere((e) => e.projectId == projectId);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAllProject(String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _projectService.deleteAllProject(token);
+
+      _projects.clear();
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Clear error
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  // Refresh
+  Future<void> refresh(String token) async {
+    await getAllProject(token: token);
   }
 }
