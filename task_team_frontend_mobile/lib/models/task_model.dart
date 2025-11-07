@@ -1,8 +1,3 @@
-import 'package:task_team_frontend_mobile/models/employee_model.dart';
-import 'package:task_team_frontend_mobile/models/project_model.dart';
-import 'package:task_team_frontend_mobile/models/tasktype_model.dart';
-import 'package:task_team_frontend_mobile/models/role_model.dart';
-
 class TaskModel {
   final String? id;
   final String taskId;
@@ -16,9 +11,9 @@ class TaskModel {
   final String status;
 
   final String? parentTaskId;
-  final ProjectModel projectId;
-  final TasktypeModel tasktypeId;
-  final List<EmployeeModel> assignedTo;
+  final String projectId;
+  final String tasktypeId;
+  final List<String> assignedTo;
   String? projectName;
 
   TaskModel({
@@ -47,9 +42,9 @@ class TaskModel {
     String? priority,
     String? status,
     String? parentTaskId,
-    ProjectModel? projectId,
-    TasktypeModel? tasktypeId,
-    List<EmployeeModel>? assignedTo,
+    String? projectId,
+    String? tasktypeId,
+    List<String>? assignedTo,
     String? projectName,
   }) {
     return TaskModel(
@@ -84,75 +79,43 @@ class TaskModel {
       status: json['status'] ?? 'new_task',
       parentTaskId: json['parent_task_id'],
 
-      // Xử lý project_id - nếu là String thì tạo object dummy
+      // Xử lý project_id - lấy ID dạng String
       projectId: json['project_id'] is Map
-          ? ProjectModel.fromJson(Map<String, dynamic>.from(json['project_id']))
-          : ProjectModel(
-              projectId: json['project_id']?.toString() ?? '',
-              projectName: '',
-              description: '',
-              status: '',
-            ),
+          ? json['project_id']['project_id'].toString()
+          : json['project_id'].toString(),
 
-      // Xử lý task_type_id - nếu là String thì tạo object dummy
+      // Xử lý task_type_id - lấy ID dạng String
       tasktypeId: json['task_type_id'] is Map
-          ? TasktypeModel.fromJson(
-              Map<String, dynamic>.from(json['task_type_id']))
-          : TasktypeModel(
-              tasktypeId: json['task_type_id']?.toString() ?? '',
-              tasktypeName: '',
-              description: '',
-            ),
+          ? json['task_type_id']['task_type_id'].toString()
+          : json['task_type_id'].toString(),
 
-      // Xử lý assigned_to - parse cả Map và String
+      // Xử lý assigned_to - chuyển thành List<String>
       assignedTo: _parseAssignedTo(json['assigned_to']),
 
       projectName: json['projectName'],
     );
   }
 
-  // Helper method để parse assigned_to
-  static List<EmployeeModel> _parseAssignedTo(dynamic assignedTo) {
+  // Helper method để parse assigned_to thành List<String>
+  static List<String> _parseAssignedTo(dynamic assignedTo) {
     if (assignedTo == null) return [];
 
     // Nếu là List
     if (assignedTo is List) {
       return assignedTo.map((e) {
         if (e is Map) {
-          // Cast Map<dynamic, dynamic> thành Map<String, dynamic>
-          return EmployeeModel.fromJson(Map<String, dynamic>.from(e));
+          // Nếu là Map, lấy employee_id
+          return e['employee_id'].toString();
         } else {
-          // Nếu chỉ là String ID, tạo object dummy
-          return EmployeeModel(
-            employeeId: e.toString(),
-            employeeName: '',
-            email: '',
-            phone: '',
-            roleId: RoleModel(
-              roleId: '',
-              roleName: '',
-              description: '',
-            ),
-          );
+          // Nếu đã là String ID
+          return e.toString();
         }
       }).toList();
     }
 
     // Nếu là String đơn lẻ
     if (assignedTo is String) {
-      return [
-        EmployeeModel(
-          employeeId: assignedTo,
-          employeeName: '',
-          email: '',
-          phone: '',
-          roleId: RoleModel(
-            roleId: '',
-            roleName: '',
-            description: '',
-          ),
-        )
-      ];
+      return [assignedTo];
     }
 
     return [];
@@ -169,9 +132,9 @@ class TaskModel {
       'priority': priority,
       'status': status,
       'parent_task_id': parentTaskId,
-      'project_id': projectId.toJson(),
-      'task_type_id': tasktypeId.toJson(),
-      'assigned_to': assignedTo.map((e) => e.toJson()).toList(),
+      'project_id': projectId,
+      'task_type_id': tasktypeId,
+      'assigned_to': assignedTo,
     };
   }
 
@@ -180,6 +143,7 @@ class TaskModel {
     return 'TaskModel(id: $id, taskId: $taskId, taskName: $taskName, '
         'priority: $priority, status: $status, '
         'startDate: $startDate, endDate: $endDate, '
-        'assignedTo: ${assignedTo.map((e) => e.employeeName).join(', ')})';
+        'projectId: $projectId, tasktypeId: $tasktypeId, '
+        'assignedTo: ${assignedTo.join(', ')})';
   }
 }

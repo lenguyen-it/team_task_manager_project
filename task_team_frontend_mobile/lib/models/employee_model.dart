@@ -1,5 +1,3 @@
-import 'package:task_team_frontend_mobile/models/role_model.dart';
-
 class EmployeeModel {
   final String? id;
   final String employeeId;
@@ -7,7 +5,9 @@ class EmployeeModel {
   final String email;
   final String phone;
   final String? image;
-  final RoleModel roleId;
+  final DateTime? birth;
+  final String? address;
+  final String roleId;
 
   EmployeeModel({
     this.id,
@@ -16,6 +16,8 @@ class EmployeeModel {
     required this.email,
     required this.phone,
     this.image,
+    this.birth,
+    this.address,
     required this.roleId,
   });
 
@@ -31,13 +33,11 @@ class EmployeeModel {
       email: json['email'].toString(),
       phone: json['phone'].toString(),
       image: json['image'],
+      birth: json['birth'] != null ? DateTime.parse(json['birth']) : null,
+      address: json['address'],
       roleId: json['role_id'] is Map
-          ? RoleModel.fromJson(json['role_id'])
-          : RoleModel(
-              roleId: json['role_id'] ?? '',
-              roleName: '',
-              description: '',
-            ),
+          ? json['role_id']['role_id'].toString()
+          : json['role_id'].toString(),
     );
   }
 
@@ -49,7 +49,9 @@ class EmployeeModel {
       'email': email,
       'phone': phone,
       'image': image,
-      'role_id': roleId.toJson(),
+      'birth': birth?.toIso8601String(),
+      'address': address,
+      'role_id': roleId,
     };
   }
 
@@ -60,7 +62,9 @@ class EmployeeModel {
     String? email,
     String? phone,
     String? image,
-    RoleModel? roleId,
+    String? address,
+    DateTime? birth,
+    String? roleId,
   }) {
     return EmployeeModel(
       id: id ?? this.id,
@@ -69,6 +73,8 @@ class EmployeeModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       image: image ?? this.image,
+      birth: birth ?? this.birth,
+      address: address ?? this.address,
       roleId: roleId ?? this.roleId,
     );
   }
@@ -76,6 +82,6 @@ class EmployeeModel {
   @override
   String toString() {
     return 'EmployeeModel(id: $id, employeeId: $employeeId, employeeName: $employeeName, '
-        'email: $email, phone: $phone, image: $image, roleId: ${roleId.roleId})';
+        'email: $email, phone: $phone, birth: $birth, address: $address, image: $image, roleId: $roleId)';
   }
 }
