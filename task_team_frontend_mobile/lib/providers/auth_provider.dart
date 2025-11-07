@@ -104,17 +104,21 @@ class AuthProvider extends ChangeNotifier {
 
       _status = AuthStatus.authenticated;
 
-      // LOG THÔNG TIN ĐĂNG NHẬP THÀNH CÔNG
+      // LOG THÔNG TIN ĐĂNG NHẬP THÀNH CÔNG - FIXED
       print('========================================');
       print('🎉 LOGIN SUCCESSFUL!');
       print('========================================');
       print('📋 Employee ID: ${_currentEmployee?.employeeId}');
       print('👤 Employee Name: ${_currentEmployee?.employeeName}');
       print('🔑 Role ID: ${_currentEmployee?.roleId}');
-      print('👔 Role Name: ${_currentEmployee?.roleId}');
       print('📧 Email: ${_currentEmployee?.email}');
       print('📱 Phone: ${_currentEmployee?.phone ?? 'N/A'}');
-      print('🔐 Token: ${_token?.substring(0, 30)}...');
+      // FIX: Kiểm tra độ dài token trước khi substring
+      if (_token != null && _token!.length > 30) {
+        print('🔐 Token: ${_token!.substring(0, 30)}...');
+      } else {
+        print('🔐 Token: ${_token ?? 'N/A'}');
+      }
       print('💾 Remember Me: $rememberMe');
       print('========================================');
 
