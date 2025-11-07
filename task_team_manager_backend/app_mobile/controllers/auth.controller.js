@@ -67,9 +67,11 @@ exports.register = async (req, res, next) => {
     const image = req.file ? `/uploads/${req.file.filename}` : null;
     const employee = await employeeService.create(req.body, image);
 
-    res
-      .status(201)
-      .json({ message: "Employee registered successfully", employee });
+    res.status(201).json({
+      message: "Employee registered successfully",
+      employee_name: employee.employee_name,
+      employee,
+    });
   } catch (error) {
     return next(
       new ApiError(500, "Error registering employee: " + error.message)
