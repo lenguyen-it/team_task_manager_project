@@ -27,6 +27,8 @@ class EmployeeService {
       role_id: payload.role_id,
       email: payload.email,
       phone: payload.phone,
+      birth: payload.birth,
+      address: payload.address,
       image: payload.image,
     };
 

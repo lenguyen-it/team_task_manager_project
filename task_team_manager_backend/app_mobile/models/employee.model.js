@@ -28,6 +28,14 @@ const employeeSchema = mongoose.Schema({
     type: Number,
   },
 
+  birth: {
+    type: Date,
+  },
+
+  address: {
+    type: String,
+  },
+
   image: {
     type: String,
     default: "",
