@@ -111,7 +111,7 @@ class AuthProvider extends ChangeNotifier {
       print('📋 Employee ID: ${_currentEmployee?.employeeId}');
       print('👤 Employee Name: ${_currentEmployee?.employeeName}');
       print('🔑 Role ID: ${_currentEmployee?.roleId}');
-      print('👔 Role Name: ${_currentEmployee?.roleId.roleName}');
+      print('👔 Role Name: ${_currentEmployee?.roleId}');
       print('📧 Email: ${_currentEmployee?.email}');
       print('📱 Phone: ${_currentEmployee?.phone ?? 'N/A'}');
       print('🔐 Token: ${_token?.substring(0, 30)}...');
@@ -176,7 +176,7 @@ class AuthProvider extends ChangeNotifier {
   // Kiểm tra quyền
   bool hasPermission(List<String> allowedRoles) {
     if (_currentEmployee == null) return false;
-    return allowedRoles.contains(_currentEmployee!.roleId.roleId);
+    return allowedRoles.contains(_currentEmployee!.roleId);
   }
 
   // Reset error message

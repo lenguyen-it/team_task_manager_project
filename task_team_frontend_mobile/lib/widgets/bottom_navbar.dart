@@ -77,8 +77,8 @@ class _BottomNavbarState extends State<BottomNavbar> {
     ),
   };
 
-  RoleNavConfig _getNavConfig(String? roleId, String? roleName) {
-    String? searchKey = roleId ?? roleName;
+  RoleNavConfig _getNavConfig(String? roleId) {
+    String? searchKey = roleId;
 
     if (searchKey == null || searchKey.isEmpty) {
       return _roleConfigs['staff']!;
@@ -109,10 +109,9 @@ class _BottomNavbarState extends State<BottomNavbar> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    final roleId = authProvider.currentEmployee?.roleId.roleId;
-    final roleName = authProvider.currentEmployee?.roleId.roleName;
+    final roleId = authProvider.currentEmployee?.roleId;
 
-    final config = _getNavConfig(roleId, roleName);
+    final config = _getNavConfig(roleId);
 
     if (_selectedScreenIndex >= config.widgets.length) {
       _selectedScreenIndex = 0;
