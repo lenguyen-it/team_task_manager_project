@@ -78,7 +78,9 @@ class EmployeeInfo {
   factory EmployeeInfo.fromJson(Map<String, dynamic> json) {
     return EmployeeInfo(
       employeeId: json['employee_id'],
-      roleId: json['role_id'],
+      roleId: json['role_id'] is Map
+          ? json['role_id']['role_id']
+          : json['role_id'].toString(),
     );
   }
 
