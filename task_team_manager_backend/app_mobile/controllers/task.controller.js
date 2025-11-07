@@ -71,6 +71,18 @@ exports.findByTaskName = async (req, res, next) => {
   }
 };
 
+exports.findTaskByEmployee = async (req, res, next) => {
+  const taskService = new TaskService(MongoDB.client);
+
+  try {
+    const { employee_id } = req.params;
+    const tasks = await taskService.findTaskByEmployee(employee_id);
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.update = async (req, res, next) => {
   if (Object.keys(req.body).length === 0) {
     return next(new ApiError(400, "Data to update cannot be empty"));

@@ -41,7 +41,7 @@ class TaskService {
   }
 
   async findById(id) {
-    return await this.User.findOne({
+    return await this.Task.findOne({
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     });
   }
@@ -56,6 +56,19 @@ class TaskService {
     return await this.find({
       task_name: { $regex: new RegExp(task_name), $options: "i" },
     });
+  }
+
+  async findTaskByEmployee(employee_id) {
+    try {
+      const tasks = await this.Task.find({
+        assigned_to: { $in: [employee_id] },
+      }).toArray();
+      return tasks;
+    } catch {
+      throw new Error(
+        "Không thể lấy danh sách task của nhân viên: " + error.message
+      );
+    }
   }
 
   async update(id, payload) {

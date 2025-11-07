@@ -30,4 +30,8 @@ router
   .put(verifyToken, TaskController.update)
   .delete(verifyToken, authorize(["admin", "manager"]), TaskController.delete);
 
+router
+  .route("/employee/:employee_id")
+  .get(verifyToken, TaskController.findTaskByEmployee);
+
 module.exports = router;
