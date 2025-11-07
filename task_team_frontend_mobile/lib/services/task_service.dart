@@ -23,7 +23,7 @@ class TaskService {
         return data.map((e) => TaskModel.fromJson(e)).toList();
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Không tải được danh sách vai trò');
+        throw Exception(error['message'] ?? 'Không tải được danh sách task');
       }
     } catch (e) {
       throw Exception('Lỗi khi lấy danh sách task: $e');
@@ -47,7 +47,7 @@ class TaskService {
         return TaskModel.fromJson(data);
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Không lấy được nhân viên');
+        throw Exception(error['message'] ?? 'Không lấy được task');
       }
     } catch (e) {
       throw Exception('Đã xảy ra lỗi: $e');
@@ -70,10 +70,43 @@ class TaskService {
         return task.taskName;
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Không lấy được tên dự án');
+        throw Exception(error['message'] ?? 'Không lấy được tên task');
       }
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi khi lấy tên dự án: $e');
+      throw Exception('Đã xảy ra lỗi khi lấy tên task: $e');
+    }
+  }
+
+  Future<List<TaskModel>> getTaskByEmployee(
+      String employeeId, String token) async {
+    // FIX: Kiểm tra độ dài token trước khi substring
+    if (token.length > 40) {
+      print('TOKEN GỬI ĐI: ${token.substring(0, 40)}...');
+    } else {
+      print('TOKEN GỬI ĐI: $token');
+    }
+    print('EMPLOYEE ID: $employeeId');
+
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConfig.getTaskByEmployee(employeeId)),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('GET TASK BY EMPLOYEE - Status: ${response.statusCode}');
+      print('Response: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => TaskModel.fromJson(e)).toList();
+      } else {
+        throw Exception('Lỗi khi tải task của nhân viên');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -94,10 +127,10 @@ class TaskService {
         );
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Tạo task thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi tạo nhân viên: $e');
+      throw Exception('Lỗi tạo task: $e');
     }
   }
 
@@ -119,14 +152,14 @@ class TaskService {
         return TaskModel.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Cập nhật task thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi cập nhật nhân viên: $e');
+      throw Exception('Lỗi cập nhật task: $e');
     }
   }
 
-  Future<void> deleteTassk(String taskId, String token) async {
+  Future<void> deleteTask(String taskId, String token) async {
     try {
       final response = await http.delete(
         Uri.parse(ApiConfig.deleteTask(taskId)),
@@ -137,10 +170,10 @@ class TaskService {
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Xóa task thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi xóa nhân viên: $e');
+      throw Exception('Lỗi xóa task: $e');
     }
   }
 
@@ -155,10 +188,10 @@ class TaskService {
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Xóa task thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi xóa toàn bộ nhân viên: $e');
+      throw Exception('Lỗi xóa toàn bộ task: $e');
     }
   }
 }

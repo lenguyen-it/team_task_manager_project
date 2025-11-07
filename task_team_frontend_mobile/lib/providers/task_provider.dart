@@ -49,14 +49,57 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  // Hàm lọc theo ngày
+  // Hàm lọc theo ngày - FIXED: Logic chính xác
   List<TaskModel> getTaskByDate(DateTime selectedDate) {
+    // Chuẩn hóa ngày đã chọn (bỏ giờ phút giây)
+    final selected = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+
     return _tasks.where((task) {
-      final start = task.startDate;
-      final end = task.endDate ?? task.startDate;
-      return selectedDate.isAfter(start.subtract(const Duration(days: 1))) &&
-          selectedDate.isBefore(end.add(const Duration(days: 1)));
+      // Chuẩn hóa ngày bắt đầu
+      final start = DateTime(
+        task.startDate.year,
+        task.startDate.month,
+        task.startDate.day,
+      );
+
+      // Chuẩn hóa ngày kết thúc
+      final end = task.endDate != null
+          ? DateTime(
+              task.endDate!.year,
+              task.endDate!.month,
+              task.endDate!.day,
+            )
+          : start;
+
+      // Kiểm tra: selected phải >= start VÀ selected phải <= end
+      final isAfterOrSameStart =
+          selected.isAtSameMomentAs(start) || selected.isAfter(start);
+      final isBeforeOrSameEnd =
+          selected.isAtSameMomentAs(end) || selected.isBefore(end);
+
+      return isAfterOrSameStart && isBeforeOrSameEnd;
     }).toList();
+  }
+
+  // Lấy task theo nhân viên
+  Future<void> getTaskByEmployee(String token, String employeeId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final data = await _taskService.getTaskByEmployee(employeeId, token);
+      _tasks = data;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> createTask(TaskModel task, String token) async {
@@ -102,7 +145,7 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _taskService.deleteTassk(taskId, token);
+      await _taskService.deleteTask(taskId, token);
       _tasks.removeWhere((e) => e.taskId == taskId);
       return true;
     } catch (e) {
