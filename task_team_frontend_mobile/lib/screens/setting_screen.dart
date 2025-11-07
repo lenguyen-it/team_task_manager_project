@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
+import 'package:task_team_frontend_mobile/screens/profile_screen.dart';
 import '../providers/auth_provider.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -12,7 +13,6 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   Future<void> _handleLogout() async {
-    // Hiển thị dialog xác nhận
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -45,9 +45,31 @@ class _SettingScreenState extends State<SettingScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
+    }
+  }
+
+  void _navigateToProfile() {
+    final authProvider = context.read<AuthProvider>();
+    final employee = authProvider.currentEmployee;
+    final token = authProvider.token;
+
+    if (employee != null && token != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileScreen(
+            token: token,
+            employeeId: employee.employeeId,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy thông tin người dùng')),
+      );
     }
   }
 
@@ -62,7 +84,6 @@ class _SettingScreenState extends State<SettingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             const Text(
               'Cài đặt',
               style: TextStyle(
@@ -118,7 +139,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          employee?.roleId.roleName ?? 'N/A',
+                          employee?.roleId ?? 'N/A',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -132,7 +153,7 @@ class _SettingScreenState extends State<SettingScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Các tùy chọn cài đặt
+            // Các tùy chọn cài đặt + nút đăng xuất
             Expanded(
               child: ListView(
                 children: [
@@ -140,13 +161,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     icon: Icons.person_outline,
                     title: 'Thông tin cá nhân',
                     subtitle: 'Xem và chỉnh sửa thông tin',
-                    onTap: () {
-                      // TODO: Navigate to profile screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Chức năng đang phát triển')),
-                      );
-                    },
+                    onTap: _navigateToProfile,
                   ),
                   const Divider(height: 1),
                   _buildSettingItem(
@@ -154,7 +169,6 @@ class _SettingScreenState extends State<SettingScreen> {
                     title: 'Đổi mật khẩu',
                     subtitle: 'Thay đổi mật khẩu của bạn',
                     onTap: () {
-                      // TODO: Navigate to change password screen
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
@@ -167,7 +181,6 @@ class _SettingScreenState extends State<SettingScreen> {
                     title: 'Thông báo',
                     subtitle: 'Quản lý thông báo',
                     onTap: () {
-                      // TODO: Navigate to notification settings
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
@@ -180,7 +193,6 @@ class _SettingScreenState extends State<SettingScreen> {
                     title: 'Ngôn ngữ',
                     subtitle: 'Tiếng Việt',
                     onTap: () {
-                      // TODO: Navigate to language settings
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
@@ -193,7 +205,6 @@ class _SettingScreenState extends State<SettingScreen> {
                     title: 'Trợ giúp & Hỗ trợ',
                     subtitle: 'Câu hỏi thường gặp',
                     onTap: () {
-                      // TODO: Navigate to help screen
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
@@ -206,43 +217,42 @@ class _SettingScreenState extends State<SettingScreen> {
                     title: 'Về ứng dụng',
                     subtitle: 'Phiên bản 1.0.0',
                     onTap: () {
-                      // TODO: Show about dialog
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
                       );
                     },
                   ),
+
+                  // Nút đăng xuất nằm cuối danh sách
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ElevatedButton.icon(
+                      onPressed: _handleLogout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text(
+                        'Đăng xuất',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
-
-            // Nút đăng xuất
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _handleLogout,
-                icon: const Icon(Icons.logout),
-                label: const Text(
-                  'Đăng xuất',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
