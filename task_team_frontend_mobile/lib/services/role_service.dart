@@ -33,7 +33,9 @@ class RoleService {
   Future<RoleModel> getRoleById(String roleId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse(ApiConfig.getRoleById(roleId)),
+        Uri.parse(
+          ApiConfig.getRoleById(roleId),
+        ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

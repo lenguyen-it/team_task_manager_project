@@ -76,4 +76,89 @@ class ProjectService {
       throw Exception('Đã xảy ra lỗi khi lấy tên dự án: $e');
     }
   }
+
+  Future<ProjectModel> createProject(ProjectModel project, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.createProject),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(project.toJson()),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ProjectModel.fromJson(
+          json.decode(response.body),
+        );
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi tạo nhân viên: $e');
+    }
+  }
+
+  Future<ProjectModel> updateProject(
+      String projectId, ProjectModel project, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse(
+          ApiConfig.updateProject(projectId),
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(project.toJson()),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ProjectModel.fromJson(json.decode(response.body));
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi cập nhật nhân viên: $e');
+    }
+  }
+
+  Future<void> deleteProject(String projectId, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(ApiConfig.deleteProject(projectId)),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi xóa nhân viên: $e');
+    }
+  }
+
+  Future<void> deleteAllProject(String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(ApiConfig.deleteAllProject),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi xóa toàn bộ nhân viên: $e');
+    }
+  }
 }
