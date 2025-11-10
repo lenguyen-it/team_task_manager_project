@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:task_team_frontend_mobile/models/task_model.dart';
 import 'package:task_team_frontend_mobile/providers/task_provider.dart';
 import '../providers/auth_provider.dart';
@@ -22,7 +23,7 @@ class _ChartScreenState extends State<ChartScreen> {
   static const int visibleDaysCount = 5;
   static const double dayWidth = 55.0;
   static const double headerHeight = 60.0;
-  static const int maxVisibleRows = 4;
+  static const int maxVisibleRows = 3;
 
   DateTime? selectedDate;
 
@@ -94,7 +95,6 @@ class _ChartScreenState extends State<ChartScreen> {
     _scrollController.jumpTo(safeOffset);
   }
 
-  /// Cuộn đến ngày đã chọn
   void _scrollToDate(DateTime date) {
     if (!_scrollController.hasClients) return;
 
@@ -114,7 +114,6 @@ class _ChartScreenState extends State<ChartScreen> {
     );
   }
 
-  /// Mở DatePicker và chọn ngày
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -127,8 +126,6 @@ class _ChartScreenState extends State<ChartScreen> {
             colorScheme: const ColorScheme.light(
               primary: Colors.blueAccent,
               onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
             ),
           ),
           child: child!,
@@ -178,6 +175,148 @@ class _ChartScreenState extends State<ChartScreen> {
     super.dispose();
   }
 
+  // === BIỂU ĐỒ THEO TUẦN ===
+  Widget _buildWeeklyChart(List<TaskModel> tasks) {
+    final Map<int, int> weekCount = {};
+
+    for (var task in tasks) {
+      final weekStart =
+          task.startDate.subtract(Duration(days: task.startDate.weekday - 1));
+      final weekKey = weekStart.year * 100 + weekStart.weekOfYear;
+      weekCount[weekKey] = (weekCount[weekKey] ?? 0) + 1;
+    }
+
+    final sortedWeeks = weekCount.keys.toList()..sort();
+    final data = sortedWeeks.map((key) {
+      final year = key ~/ 100;
+      final week = key % 100;
+      DateTime(year).add(Duration(days: (week - 1) * 7));
+      return BarChartGroupData(
+        x: key,
+        barRods: [
+          BarChartRodData(
+            toY: weekCount[key]!.toDouble(),
+            color: Colors.blueAccent,
+            width: 16,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+          ),
+        ],
+      );
+    }).toList();
+
+    return _buildBarChart(
+      title: 'Task theo tuần',
+      data: data,
+      getTitle: (value, _) {
+        final key = value.toInt();
+        final week = key % 100;
+        return 'T$week';
+      },
+    );
+  }
+
+  // === BIỂU ĐỒ THEO THÁNG ===
+  Widget _buildMonthlyChart(List<TaskModel> tasks) {
+    final Map<String, int> monthCount = {};
+
+    for (var task in tasks) {
+      final key = DateFormat('yyyy-MM').format(task.startDate);
+      monthCount[key] = (monthCount[key] ?? 0) + 1;
+    }
+
+    final sortedMonths = monthCount.keys.toList()..sort();
+    final data = sortedMonths.asMap().entries.map((e) {
+      return BarChartGroupData(
+        x: e.key,
+        barRods: [
+          BarChartRodData(
+            toY: monthCount[e.value]!.toDouble(),
+            color: Colors.green,
+            width: 16,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+          ),
+        ],
+      );
+    }).toList();
+
+    return _buildBarChart(
+      title: 'Task theo tháng',
+      data: data,
+      getTitle: (value, _) {
+        final index = value.toInt();
+        if (index >= sortedMonths.length) return '';
+        return DateFormat('MM/yyyy')
+            .format(DateTime.parse('${sortedMonths[index]}-01'));
+      },
+    );
+  }
+
+  Widget _buildBarChart({
+    required String title,
+    required List<BarChartGroupData> data,
+    required String Function(double, TitleMeta) getTitle,
+  }) {
+    if (data.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      );
+    }
+
+    return Container(
+      height: 180,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                barGroups: data,
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) => Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontSize: 10)),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text(getTitle(value, meta),
+                            style: const TextStyle(fontSize: 10)),
+                      ),
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: true),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
@@ -215,6 +354,7 @@ class _ChartScreenState extends State<ChartScreen> {
               ? const Center(child: Text('Không có task nào để hiển thị'))
               : Column(
                   children: [
+                    // === TIÊU ĐỀ + ICON ===
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       color: Colors.grey.shade50,
@@ -224,27 +364,20 @@ class _ChartScreenState extends State<ChartScreen> {
                           const Text(
                             'Biểu đồ ngày',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.calendar_today,
                                 color: Colors.blueAccent),
-                            tooltip: 'Chọn ngày',
                             onPressed: () => _selectDate(context),
                           ),
                         ],
                       ),
                     ),
-
-                    Container(
-                      height: 1,
-                      color: Colors.grey.shade300,
-                    ),
-
-                    // === PHẦN LỊCH ===
+                    Container(height: 2, color: Colors.grey.shade400),
+                    // === PHẦN LỊCH CHÍNH ===
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
@@ -255,10 +388,7 @@ class _ChartScreenState extends State<ChartScreen> {
                               width: totalDaysInView * dayWidth,
                               child: Column(
                                 children: [
-                                  // Header ngày
                                   _buildDayHeaders(allDays),
-
-                                  // Khu vực task
                                   SizedBox(
                                     height: visibleTaskHeight,
                                     child: Scrollbar(
@@ -284,12 +414,8 @@ class _ChartScreenState extends State<ChartScreen> {
                                       ),
                                     ),
                                   ),
-
-                                  // Đường ngang dưới cùng
                                   Container(
-                                    height: 2,
-                                    color: Colors.grey.shade400,
-                                  ),
+                                      height: 2, color: Colors.grey.shade400),
                                 ],
                               ),
                             ),
@@ -297,11 +423,19 @@ class _ChartScreenState extends State<ChartScreen> {
                         },
                       ),
                     ),
+
+                    // === 2 BIỂU ĐỒ NHỎ ===
+                    if (tasks.isNotEmpty) ...[
+                      _buildWeeklyChart(tasks),
+                      _buildMonthlyChart(tasks),
+                      const Divider(height: 1, color: Colors.grey),
+                    ],
                   ],
                 ),
     );
   }
 
+  // === CÁC HÀM PHỤ ===
   Widget _buildVerticalColumns(List<DateTime> days, double height) {
     final now = DateTime.now();
     return Row(
@@ -319,8 +453,7 @@ class _ChartScreenState extends State<ChartScreen> {
           height: height,
           decoration: BoxDecoration(
             border: Border(
-              right: BorderSide(color: Colors.grey.shade300, width: 1),
-            ),
+                right: BorderSide(color: Colors.grey.shade300, width: 1)),
             color: isSelected
                 ? Colors.orange.shade100
                 : isToday
@@ -338,7 +471,9 @@ class _ChartScreenState extends State<ChartScreen> {
       height: headerHeight,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey, width: 2)),
+        border: Border(
+            bottom: BorderSide(
+                color: Color.fromARGB(255, 190, 188, 188), width: 2)),
       ),
       child: Row(
         children: days.map((day) {
@@ -501,5 +636,14 @@ class _ChartScreenState extends State<ChartScreen> {
       'widgets': taskWidgets,
       'maxRows': rows.length,
     };
+  }
+}
+
+// Extension để lấy tuần trong năm
+extension DateTimeExtension on DateTime {
+  int get weekOfYear {
+    final firstDayOfYear = DateTime(year, 1, 1);
+    final daysSinceFirstDay = difference(firstDayOfYear).inDays;
+    return (daysSinceFirstDay + firstDayOfYear.weekday - 1) ~/ 7 + 1;
   }
 }
