@@ -20,6 +20,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final CalendarFormat _calendarFormat = CalendarFormat.week;
   bool _hasLoadedTasks = false;
 
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  // Danh sách riêng cho search, không ảnh hưởng provider.tasks
+  List<TaskModel> _searchResults = [];
+  bool _isSearchMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,11 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (auth.isAuthenticated &&
         auth.currentEmployee != null &&
         auth.token != null) {
-      // await task.getTaskByEmployee(
-      //   auth.token!,
-      //   auth.currentEmployee!.employeeId,
-      // );
-
       await Future.wait([
         task.getTaskByEmployee(
           auth.token!,
@@ -74,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final employeeName =
         authProvider.currentEmployee?.employeeName ?? 'Nhân viên';
 
-    // Lọc task theo ngày đã chọn
+    // Lọc task theo ngày đã chọn - luôn dùng provider.tasks gốc
     final tasksInSelectedDay =
         taskProvider.getTaskByDate(_selectedDay ?? DateTime.now());
 
@@ -93,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            // ───── Task trong ngày ─────
+            // ───── Task trong ngày ───── (không bị ảnh hưởng bởi search)
             _buildTodaySection(tasksInSelectedDay, taskProvider.isLoading),
 
             const SizedBox(height: 24),
@@ -223,13 +225,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (_, i) {
                         final task = tasks[i];
                         final color = _getStatusColor(task.status);
+                        final statusVi = _getStatusInVietnamese(task.status);
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: _buildTaskChip(
                             task.taskName,
                             task.description ?? '',
                             color,
-                            task.status,
+                            statusVi,
                             task.tasktypeId,
                           ),
                         );
@@ -261,19 +264,78 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    // Quyết định hiển thị danh sách nào: search results hoặc toàn bộ tasks
+    final displayTasks = _isSearchMode ? _searchResults : provider.tasks;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Toàn bộ công việc',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Icon(Icons.keyboard_arrow_down),
+              _isSearching
+                  ? Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Tìm kiếm công việc...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _isSearching = false;
+                                _isSearchMode = false;
+                                _searchController.clear();
+                                _searchResults = [];
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                        ),
+                        onChanged: (value) async {
+                          if (value.isEmpty) {
+                            setState(() {
+                              _isSearchMode = false;
+                              _searchResults = [];
+                            });
+                          } else {
+                            // Tìm kiếm local trong provider.tasks
+                            final results = provider.tasks.where((task) {
+                              return task.taskName
+                                  .toLowerCase()
+                                  .contains(value.toLowerCase());
+                            }).toList();
+
+                            setState(() {
+                              _isSearchMode = true;
+                              _searchResults = results;
+                            });
+                          }
+                        },
+                      ),
+                    )
+                  : const Text(
+                      'Toàn bộ công việc',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+              if (!_isSearching)
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = true;
+                    });
+                  },
+                ),
             ],
           ),
         ),
@@ -283,13 +345,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.all(32),
                 child: Center(child: CircularProgressIndicator()),
               )
-            : provider.tasks.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(32),
+            : displayTasks.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Center(
                       child: Text(
-                        'Chưa có công việc nào',
-                        style: TextStyle(color: Colors.grey),
+                        _isSearchMode
+                            ? 'Không tìm thấy công việc nào'
+                            : 'Chưa có công việc nào',
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ),
                   )
@@ -297,15 +361,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: provider.tasks.length,
+                    itemCount: displayTasks.length,
                     itemBuilder: (_, i) {
-                      final task = provider.tasks[i];
+                      final task = displayTasks[i];
                       final color = _getStatusColor(task.status);
+                      final statusVi = _getStatusInVietnamese(task.status);
                       final range =
                           _formatDateRange(task.startDate, task.endDate);
                       return _buildTaskItem(
                         task.taskName,
-                        task.status,
+                        statusVi,
                         color,
                         range,
                         task.tasktypeId,
@@ -443,6 +508,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  // Chuyển đổi status sang tiếng Việt
+  String _getStatusInVietnamese(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 'Hoàn thành';
+      case 'in_progress':
+        return 'Đang thực hiện';
+      case 'pending':
+        return 'Chưa bắt đầu';
+      case 'new_task':
+        return 'Công việc mới';
+      case 'pause':
+        return 'Tạm dừng';
+      case 'overdue':
+        return 'Quá hạn';
+      default:
+        return status; // Giữ nguyên nếu đã là tiếng Việt
+    }
   }
 
   Color _getStatusColor(String status) {
