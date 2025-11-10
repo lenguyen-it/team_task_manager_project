@@ -53,9 +53,9 @@ class TaskService {
   }
 
   async findByTaskName(task_name) {
-    return await this.find({
+    return await this.Task.find({
       task_name: { $regex: new RegExp(task_name), $options: "i" },
-    });
+    }).toArray();
   }
 
   async findTaskByEmployee(employee_id) {

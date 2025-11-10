@@ -64,7 +64,7 @@ exports.findOne = async (req, res, next) => {
 exports.findByTaskName = async (req, res, next) => {
   try {
     const taskService = new TaskService(MongoDB.client);
-    const tasks = await taskService.findByTaskName(req.query.task_name || "");
+    const tasks = await taskService.findByTaskName(req.params.task_name || "");
     res.json(tasks);
   } catch (error) {
     return next(new ApiError(500, "Error searching tasks: " + error.message));

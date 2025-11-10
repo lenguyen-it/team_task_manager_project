@@ -15,6 +15,10 @@ router
   );
 
 router
+  .route("/search/:task_name")
+  .get(verifyToken, TaskController.findByTaskName);
+
+router
   .route("/:task_id")
   .get(verifyToken, TaskController.findByTaskId)
   .put(verifyToken, TaskController.updateByTaskId)
