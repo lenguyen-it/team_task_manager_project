@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:task_team_frontend_mobile/screens/employee_screen.dart';
-import 'package:task_team_frontend_mobile/screens/task_screen.dart';
 import '../providers/auth_provider.dart';
+import '../screens/calendar_screen.dart';
+import '../screens/chart_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/role_screen.dart';
 import '../screens/setting_screen.dart';
+import '../screens/task_screen.dart';
 
 class BottomNavbar extends StatefulWidget {
   const BottomNavbar({super.key});
@@ -22,8 +23,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
     'manager': RoleNavConfig(
       widgets: const [
         HomeScreen(),
-        Center(child: Text('Calendar Screen')), // Placeholder
-        Center(child: Text('Add Task Screen')), // Placeholder
+        CalendarScreen(), Center(child: Text('Add Task Screen')), // Placeholder
         Center(child: Text('Detail Screen')), // Placeholder
         SettingScreen(),
       ],
@@ -42,8 +42,8 @@ class _BottomNavbarState extends State<BottomNavbar> {
     'staff': RoleNavConfig(
       widgets: const [
         HomeScreen(),
-        Center(child: Text('Calendar Screen')), // Placeholder
-        Center(child: Text('Charts Screen')), // Placeholder
+        CalendarScreen(), // Placeholder
+        ChartScreen(), // Placeholder
         SettingScreen(),
       ],
       items: const [

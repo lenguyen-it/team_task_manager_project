@@ -160,7 +160,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               _buildCalendar(taskProvider),
               const SizedBox(height: 24),
 
-              // 6 KHUNG THỐNG KÊ
+              // Thống kê số lượng
               _buildStatsSection(
                   total, newTasks, inProgress, pending, done, overdue),
 
@@ -491,13 +491,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(task.taskName,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        task.taskName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text(_getTaskTypeName(task.tasktypeId),
-                          style: TextStyle(
-                              fontSize: 13, color: Colors.grey.shade600)),
+                      Text(
+                        _getTaskTypeName(task.tasktypeId),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -505,12 +513,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                      color: color, borderRadius: BorderRadius.circular(20)),
-                  child: Text(statusVi,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold)),
+                    color: color,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    statusVi,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
