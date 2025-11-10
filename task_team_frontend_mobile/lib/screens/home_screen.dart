@@ -23,20 +23,28 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  // Danh sách riêng cho search, không ảnh hưởng provider.tasks
+  // Danh sách riêng cho search
   List<TaskModel> _searchResults = [];
   bool _isSearchMode = false;
+
+  // Filter theo status
+  String _selectedFilter = 'Tất cả';
+  final List<String> _filterOptions = [
+    'Tất cả',
+    'Công việc mới',
+    'Đang làm',
+    'Chờ xác nhận',
+    'Hoàn thành',
+    'Quá hạn',
+  ];
 
   @override
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    Future.delayed(Duration.zero, () {
-      _loadEmployeeTasks();
-    });
+    Future.delayed(Duration.zero, _loadEmployeeTasks);
   }
 
-  // Gọi API lấy task của nhân viên
   Future<void> _loadEmployeeTasks() async {
     if (!mounted) return;
 
@@ -54,10 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         tasktype.getAllTaskType(token: auth.token!),
       ]);
+
       if (mounted) {
-        setState(() {
-          _hasLoadedTasks = true;
-        });
+        setState(() => _hasLoadedTasks = true);
       }
     }
   }
@@ -68,6 +75,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return tasktypeProvider.getTasktypeNameById(tasktypeId) ?? 'Không xác định';
   }
 
+  List<TaskModel> _applyFilter(List<TaskModel> source) {
+    if (_selectedFilter == 'Tất cả') return source;
+
+    final targetStatus = _statusViToEn(_selectedFilter);
+    return source
+        .where((t) => t.status.toLowerCase() == targetStatus.toLowerCase())
+        .toList();
+  }
+
+  String _statusViToEn(String vi) {
+    switch (vi) {
+      case 'Công việc mới':
+        return 'new_task';
+      case 'Đang làm':
+        return 'in_progress';
+      case 'Chờ xác nhận':
+        return 'pending';
+      case 'Hoàn thành':
+        return 'done';
+      case 'Quá hạn':
+        return 'overdue';
+      default:
+        return vi;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -76,9 +109,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final employeeName =
         authProvider.currentEmployee?.employeeName ?? 'Nhân viên';
 
-    // Lọc task theo ngày đã chọn - luôn dùng provider.tasks gốc
     final tasksInSelectedDay =
         taskProvider.getTaskByDate(_selectedDay ?? DateTime.now());
+
+    final baseTasks = _isSearchMode ? _searchResults : taskProvider.tasks;
+    final displayTasks = _applyFilter(baseTasks);
 
     return SafeArea(
       bottom: false,
@@ -87,21 +122,21 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ───── Greeting ─────
+            // Greeting
             _buildGreeting(employeeName),
 
-            // ───── Calendar ─────
+            // Calendar
             _buildCalendar(taskProvider),
 
             const SizedBox(height: 24),
 
-            // ───── Task trong ngày ───── (không bị ảnh hưởng bởi search)
+            // Today section
             _buildTodaySection(tasksInSelectedDay, taskProvider.isLoading),
 
             const SizedBox(height: 24),
 
-            // ───── Toàn bộ công việc ─────
-            _buildAllTasksSection(taskProvider),
+            // All tasks + Filter chips (filter chips nằm **trong** section này)
+            _buildAllTasksSection(displayTasks, taskProvider),
 
             const SizedBox(height: 80),
           ],
@@ -142,52 +177,29 @@ class _HomeScreenState extends State<HomeScreen> {
             _focusedDay = focusedDay;
           });
         },
-        onPageChanged: (focusedDay) {
-          setState(() {
-            _focusedDay = focusedDay;
-          });
-        },
+        onPageChanged: (focusedDay) => setState(() => _focusedDay = focusedDay),
         eventLoader: (day) {
-          final checkDay = DateTime(day.year, day.month, day.day);
-
-          final hasTasks = taskProvider.tasks.any((task) {
-            final start = DateTime(
-              task.startDate.year,
-              task.startDate.month,
-              task.startDate.day,
-            );
-            final end = task.endDate != null
-                ? DateTime(
-                    task.endDate!.year,
-                    task.endDate!.month,
-                    task.endDate!.day,
-                  )
+          final check = DateTime(day.year, day.month, day.day);
+          final has = taskProvider.tasks.any((t) {
+            final start =
+                DateTime(t.startDate.year, t.startDate.month, t.startDate.day);
+            final end = t.endDate != null
+                ? DateTime(t.endDate!.year, t.endDate!.month, t.endDate!.day)
                 : start;
-
-            return (checkDay.isAtSameMomentAs(start) ||
-                    checkDay.isAfter(start)) &&
-                (checkDay.isAtSameMomentAs(end) || checkDay.isBefore(end));
+            return (check.isAtSameMomentAs(start) || check.isAfter(start)) &&
+                (check.isAtSameMomentAs(end) || check.isBefore(end));
           });
-
-          return hasTasks ? [1] : [];
+          return has ? [1] : [];
         },
-        headerStyle: const HeaderStyle(
-          formatButtonVisible: false,
-          titleCentered: true,
-        ),
+        headerStyle:
+            const HeaderStyle(formatButtonVisible: false, titleCentered: true),
         calendarStyle: CalendarStyle(
-          selectedDecoration: const BoxDecoration(
-            color: Colors.blue,
-            shape: BoxShape.circle,
-          ),
-          todayDecoration: const BoxDecoration(
-            color: Colors.orange,
-            shape: BoxShape.circle,
-          ),
-          markerDecoration: const BoxDecoration(
-            color: Colors.red,
-            shape: BoxShape.circle,
-          ),
+          selectedDecoration:
+              const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+          todayDecoration:
+              const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+          markerDecoration:
+              const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
           markerSize: 7,
           markersMaxCount: 1,
         ),
@@ -223,17 +235,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       scrollDirection: Axis.horizontal,
                       itemCount: tasks.length,
                       itemBuilder: (_, i) {
-                        final task = tasks[i];
-                        final color = _getStatusColor(task.status);
-                        final statusVi = _getStatusInVietnamese(task.status);
+                        final t = tasks[i];
+                        final color = _getStatusColor(t.status);
+                        final statusVi = _statusEnToVi(t.status);
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: _buildTaskChip(
-                            task.taskName,
-                            task.description ?? '',
+                            t.taskName,
+                            t.description ?? '',
                             color,
                             statusVi,
-                            task.tasktypeId,
+                            t.tasktypeId,
                           ),
                         );
                       },
@@ -243,33 +255,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAllTasksSection(TaskProvider provider) {
-    // Hiển thị lỗi nếu có
+  Widget _buildAllTasksSection(
+      List<TaskModel> displayTasks, TaskProvider provider) {
+    // Lỗi API
     if (provider.error != null) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(
-              'Lỗi: ${provider.error}',
-              style: const TextStyle(color: Colors.red),
-            ),
+            Text('Lỗi: ${provider.error}',
+                style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 8),
             ElevatedButton(
-              onPressed: _loadEmployeeTasks,
-              child: const Text('Thử lại'),
-            ),
+                onPressed: _loadEmployeeTasks, child: const Text('Thử lại')),
           ],
         ),
       );
     }
 
-    // Quyết định hiển thị danh sách nào: search results hoặc toàn bộ tasks
-    final displayTasks = _isSearchMode ? _searchResults : provider.tasks;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Tiêu đề + Search
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
@@ -295,25 +302,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                         ),
-                        onChanged: (value) async {
+                        onChanged: (value) {
                           if (value.isEmpty) {
                             setState(() {
                               _isSearchMode = false;
                               _searchResults = [];
                             });
                           } else {
-                            // Tìm kiếm local trong provider.tasks
-                            final results = provider.tasks.where((task) {
-                              return task.taskName
+                            final results = provider.tasks.where((t) {
+                              return t.taskName
                                   .toLowerCase()
                                   .contains(value.toLowerCase());
                             }).toList();
-
                             setState(() {
                               _isSearchMode = true;
                               _searchResults = results;
@@ -322,24 +326,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                     )
-                  : const Text(
-                      'Toàn bộ công việc',
+                  : const Text('Toàn bộ công việc',
                       style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               if (!_isSearching)
                 IconButton(
                   icon: const Icon(Icons.search),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = true;
-                    });
-                  },
+                  onPressed: () => setState(() => _isSearching = true),
                 ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        _buildFilterChips(),
+
+        const SizedBox(height: 16),
+
+        // Danh sách
         provider.isLoading && provider.tasks.isEmpty && !_hasLoadedTasks
             ? const Padding(
                 padding: EdgeInsets.all(32),
@@ -363,26 +365,82 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: displayTasks.length,
                     itemBuilder: (_, i) {
-                      final task = displayTasks[i];
-                      final color = _getStatusColor(task.status);
-                      final statusVi = _getStatusInVietnamese(task.status);
-                      final priorityVi =
-                          _getPriorityInVietnamese(task.priority);
-                      final priorityColor = _getPriorityColor(task.priority);
-                      final range =
-                          _formatDateRange(task.startDate, task.endDate);
+                      final t = displayTasks[i];
+                      final color = _getStatusColor(t.status);
+                      final statusVi = _statusEnToVi(t.status);
+                      final priorityVi = _priorityEnToVi(t.priority);
+                      final priorityColor = _getPriorityColor(t.priority);
+                      final range = _formatDateRange(t.startDate, t.endDate);
                       return _buildTaskItem(
-                        task.taskName,
+                        t.taskName,
                         statusVi,
                         color,
                         range,
-                        task.tasktypeId,
+                        t.tasktypeId,
                         priorityVi,
                         priorityColor,
                       );
                     },
                   ),
       ],
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 50,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _filterOptions.length,
+        itemBuilder: (context, index) {
+          final option = _filterOptions[index];
+          final selected = _selectedFilter == option;
+
+          Color chipColor;
+          switch (option) {
+            case 'Công việc mới':
+              chipColor = Colors.cyan;
+              break;
+            case 'Đang làm':
+              chipColor = Colors.yellow.shade700;
+              break;
+            case 'Chờ xác nhận':
+              chipColor = Colors.orange;
+              break;
+            case 'Hoàn thành':
+              chipColor = Colors.green;
+              break;
+            case 'Quá hạn':
+              chipColor = Colors.red;
+              break;
+            default:
+              chipColor = Colors.blue;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                option,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: selected ? Colors.white : Colors.black87,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              selected: selected,
+              onSelected: (_) {
+                setState(() => _selectedFilter = option);
+              },
+              backgroundColor: chipColor.withValues(alpha: 0.2),
+              selectedColor: chipColor,
+              checkmarkColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -435,10 +493,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               status,
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10),
             ),
           ),
         ],
@@ -472,9 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     taskName,
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 14, fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -496,17 +551,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Text(
-                        'Độ ưu tiên: ',
-                        style: TextStyle(fontSize: 12, color: Colors.black87),
-                      ),
+                      const Text('Độ ưu tiên: ',
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.black87)),
                       Text(
                         priority,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: priorityColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 12,
+                            color: priorityColor,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -522,10 +575,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 status,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -534,28 +586,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Chuyển đổi status sang tiếng Việt
-  String _getStatusInVietnamese(String status) {
+  String _statusEnToVi(String status) {
     switch (status.toLowerCase()) {
-      case 'done':
-        return 'Hoàn thành';
-      case 'in_progress':
-        return 'Đang thực hiện';
-      case 'pending':
-        return 'Chưa bắt đầu';
       case 'new_task':
         return 'Công việc mới';
-      case 'pause':
-        return 'Tạm dừng';
+      case 'in_progress':
+        return 'Đang làm';
+      case 'pending':
+        return 'Chờ xác nhận';
+      case 'done':
+        return 'Hoàn thành';
       case 'overdue':
         return 'Quá hạn';
       default:
-        return status; // Giữ nguyên nếu đã là tiếng Việt
+        return status;
     }
   }
 
-  // Chuyển đổi priority sang tiếng Việt
-  String _getPriorityInVietnamese(String priority) {
+  String _priorityEnToVi(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
         return 'Cao';
@@ -568,7 +616,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Lấy màu cho priority
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
@@ -588,10 +635,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'hoàn thành':
         return Colors.green;
       case 'in_progress':
-      case 'đang thực hiện':
+      case 'đang làm':
         return Colors.orange;
       case 'pending':
-      case 'chưa bắt đầu':
+      case 'chờ xác nhận':
         return Colors.grey;
       case 'new_task':
       case 'công việc mới':
