@@ -554,12 +554,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Text('Độ ưu tiên: ',
                           style:
                               TextStyle(fontSize: 12, color: Colors.black87)),
-                      Text(
-                        priority,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: priorityColor,
-                            fontWeight: FontWeight.bold),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: priorityColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(priority,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: priorityColor,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
