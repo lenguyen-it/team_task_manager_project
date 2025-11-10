@@ -110,6 +110,26 @@ class TaskService {
     }
   }
 
+  Future<List<TaskModel>> getTaskByName(String taskName, String token) async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConfig.getTaskByName(taskName)), headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => TaskModel.fromJson(e)).toList();
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Tạo task thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi tạo task: $e');
+    }
+  }
+
   Future<TaskModel> createTask(TaskModel task, String token) async {
     try {
       final response = await http.post(

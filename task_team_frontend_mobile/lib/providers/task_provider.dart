@@ -102,6 +102,18 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  //Search task theo tên
+  Future<void> getTaskByName(String token, String taskName) async {
+    try {
+      final data = await _taskService.getTaskByName(taskName, token);
+      _tasks = data;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+    }
+  }
+
   Future<bool> createTask(TaskModel task, String token) async {
     _isLoading = true;
     _error = null;
