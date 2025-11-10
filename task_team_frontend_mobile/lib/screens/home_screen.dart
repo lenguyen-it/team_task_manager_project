@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../models/task_model.dart';
-import '../models/tasktype_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/tasktype_provider.dart';
@@ -317,37 +316,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'done':
-      case 'hoàn thành':
-        return Colors.green;
-      case 'in_progress':
-      case 'đang thực hiện':
-        return Colors.orange;
-      case 'pending':
-      case 'chưa bắt đầu':
-        return Colors.grey;
-      case 'new_task':
-      case 'công việc mới':
-        return Colors.cyan;
-      case 'pause':
-      case 'tạm dừng':
-        return Colors.redAccent;
-      case 'overdue':
-      case 'quá hạn':
-        return Colors.red;
-      default:
-        return Colors.blue;
-    }
-  }
-
-  String _formatDateRange(DateTime start, DateTime? end) {
-    f(DateTime d) =>
-        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-    return '${f(start)} - ${f(end ?? start)}';
-  }
-
   Widget _buildTaskChip(
     String taskName,
     String desc,
@@ -440,16 +408,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    date,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    _getTaskTypeName(tasktypeId),
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.blueGrey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _getTaskTypeName(tasktypeId),
-                    style:
-                        const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                    date,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -475,5 +443,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+      case 'hoàn thành':
+        return Colors.green;
+      case 'in_progress':
+      case 'đang thực hiện':
+        return Colors.orange;
+      case 'pending':
+      case 'chưa bắt đầu':
+        return Colors.grey;
+      case 'new_task':
+      case 'công việc mới':
+        return Colors.cyan;
+      case 'pause':
+      case 'tạm dừng':
+        return Colors.redAccent;
+      case 'overdue':
+      case 'quá hạn':
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  String _formatDateRange(DateTime start, DateTime? end) {
+    f(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    return '${f(start)} - ${f(end ?? start)}';
   }
 }
