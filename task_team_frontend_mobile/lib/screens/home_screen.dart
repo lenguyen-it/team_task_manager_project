@@ -366,6 +366,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       final task = displayTasks[i];
                       final color = _getStatusColor(task.status);
                       final statusVi = _getStatusInVietnamese(task.status);
+                      final priorityVi =
+                          _getPriorityInVietnamese(task.priority);
+                      final priorityColor = _getPriorityColor(task.priority);
                       final range =
                           _formatDateRange(task.startDate, task.endDate);
                       return _buildTaskItem(
@@ -374,6 +377,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         color,
                         range,
                         task.tasktypeId,
+                        priorityVi,
+                        priorityColor,
                       );
                     },
                   ),
@@ -447,6 +452,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color,
     String date,
     String tasktypeId,
+    String priority,
+    Color priorityColor,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -485,6 +492,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text(
+                        'Độ ưu tiên: ',
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
+                      Text(
+                        priority,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: priorityColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -527,6 +551,34 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Quá hạn';
       default:
         return status; // Giữ nguyên nếu đã là tiếng Việt
+    }
+  }
+
+  // Chuyển đổi priority sang tiếng Việt
+  String _getPriorityInVietnamese(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return 'Cao';
+      case 'normal':
+        return 'Trung bình';
+      case 'low':
+        return 'Thấp';
+      default:
+        return priority;
+    }
+  }
+
+  // Lấy màu cho priority
+  Color _getPriorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return Colors.red;
+      case 'normal':
+        return Colors.orange;
+      case 'low':
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
