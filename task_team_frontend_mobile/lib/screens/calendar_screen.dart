@@ -88,7 +88,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         .toList();
   }
 
-  // Chuyển từ tiếng Việt → key backend (dùng để lọc)
   String _statusViToEn(String vi) {
     switch (vi) {
       case 'Công việc mới':
@@ -117,16 +116,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
 
-    final baseTasks = _isSearchMode ? _searchResults : taskProvider.tasks;
-    final displayTasks = _getFilteredTasks(baseTasks);
+    final statsTasks = taskProvider.tasks;
 
-    // Tính toán số lượng cho 6 khung
-    final total = baseTasks.length;
-    final newTasks = _countTasksByStatus(baseTasks, 'new_task');
-    final inProgress = _countTasksByStatus(baseTasks, 'in_progress');
-    final wait = _countTasksByStatus(baseTasks, 'wait');
-    final done = _countTasksByStatus(baseTasks, 'done');
-    final overdue = _countTasksByStatus(baseTasks, 'overdue');
+    final displayTasks = _getFilteredTasks(
+      _isSearchMode ? _searchResults : taskProvider.tasks,
+    );
+
+    final total = statsTasks.length;
+    final newTasks = _countTasksByStatus(statsTasks, 'new_task');
+    final inProgress = _countTasksByStatus(statsTasks, 'in_progress');
+    final wait = _countTasksByStatus(statsTasks, 'wait');
+    final done = _countTasksByStatus(statsTasks, 'done');
+    final overdue = _countTasksByStatus(statsTasks, 'overdue');
 
     return Scaffold(
       backgroundColor: Colors.white,
