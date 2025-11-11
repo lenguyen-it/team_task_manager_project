@@ -22,7 +22,7 @@ class _ChartScreenState extends State<ChartScreen> {
   late ScrollController _monthlyChartScrollController;
 
   // Cấu hình hiển thị
-  static const int visibleDaysCount = 5;
+  static const int visibleDaysCount = 1;
   static const double dayWidth = 55.0;
   static const double headerHeight = 60.0;
   static const int maxVisibleRows = 3;
@@ -30,6 +30,8 @@ class _ChartScreenState extends State<ChartScreen> {
   // Cấu hình biểu đồ
   static const int visibleBarsCount = 10;
   static const double barWidth = 35;
+
+  static const double workingDayWidth = 80.0;
 
   DateTime? selectedDate;
   DateTime? selectedMonth;
@@ -247,21 +249,32 @@ class _ChartScreenState extends State<ChartScreen> {
     final int month = viewMonth.month;
 
     final List<int> allWeekKeys = [];
+
     DateTime firstDayOfMonth = DateTime(year, month, 1);
     DateTime lastDayOfMonth = DateTime(year, month + 1, 0);
 
-    // Tuần đầu tiên của tháng
     DateTime weekStart =
         firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
-    while (weekStart.isBefore(lastDayOfMonth.add(const Duration(days: 7)))) {
-      if (weekStart.month == month ||
-          (weekStart.add(const Duration(days: 6)).month == month) ||
-          (weekStart.month <= month && weekStart.year == year)) {
+
+    while (weekStart.isBefore(lastDayOfMonth.add(const Duration(days: 14)))) {
+      weekStart.add(const Duration(days: 6));
+
+      int workingDaysInMonth = 0;
+      for (int i = 0; i < 7; i++) {
+        final d = weekStart.add(Duration(days: i));
+        if (d.month == month &&
+            d.weekday >= DateTime.monday &&
+            d.weekday <= DateTime.friday) {
+          workingDaysInMonth++;
+        }
+      }
+
+      if (workingDaysInMonth > 0) {
         allWeekKeys.add(weekStart.year * 100 + weekStart.weekOfYear);
       }
+
       weekStart = weekStart.add(const Duration(days: 7));
     }
-
     final Map<int, int> weekCount = {};
     for (int key in allWeekKeys) {
       weekCount[key] = 0;
@@ -317,8 +330,9 @@ class _ChartScreenState extends State<ChartScreen> {
       onFilterPressed: () => _selectMonthForWeeklyChart(context),
       getTitle: (value, _) {
         final key = value.toInt();
-        final weekDate = _getMondayOfWeek(key);
-        return DateFormat('dd/MM').format(weekDate);
+        final monday = _getMondayOfWeek(key);
+        final sunday = monday.add(const Duration(days: 6));
+        return '${DateFormat('dd').format(monday)}-${DateFormat('dd/MM').format(sunday)}';
       },
     );
   }
@@ -493,8 +507,15 @@ class _ChartScreenState extends State<ChartScreen> {
   DateTime _getMondayOfWeek(int weekKey) {
     final year = weekKey ~/ 100;
     final week = weekKey % 100;
+
+    // Tìm ngày 4/1 của năm đó
     final jan4 = DateTime(year, 1, 4);
-    final firstMonday = jan4.subtract(Duration(days: jan4.weekday - 1));
+    final daysToFirstMonday =
+        (1 - jan4.weekday + 7) % 7; // khoảng cách đến Thứ 2 đầu tiên
+    final firstMonday = jan4
+        .subtract(Duration(days: jan4.weekday - 1))
+        .add(Duration(days: daysToFirstMonday));
+
     return firstMonday.add(Duration(days: (week - 1) * 7));
   }
 
@@ -884,12 +905,19 @@ class _ChartScreenState extends State<ChartScreen> {
     final taskProvider = Provider.of<TaskProvider>(context);
     final tasks = taskProvider.tasks;
 
-    final allDays = List.generate(
-        totalDaysInView, (i) => startOfView.add(Duration(days: i)));
+    // Tạo danh sách chỉ các ngày làm việc từ startOfView
+    final List<DateTime> workingDays = [];
+    DateTime current = startOfView;
+    for (int i = 0; i < totalDaysInView; i++) {
+      if (current.weekday >= DateTime.monday &&
+          current.weekday <= DateTime.friday) {
+        workingDays.add(current);
+      }
+      current = current.add(const Duration(days: 1));
+    }
 
-    final result = _buildTaskBars(tasks, startOfView);
+    final result = _buildTaskBars(tasks, startOfView, workingDays);
     final List<Widget> taskWidgets = result['widgets'];
-    // final int maxRows = result['maxRows'];
     final double visibleTaskHeight = maxVisibleRows * 45.0;
 
     return Scaffold(
@@ -929,7 +957,7 @@ class _ChartScreenState extends State<ChartScreen> {
                       ),
                       Container(height: 2, color: Colors.grey.shade400),
 
-                      // Lịch chính
+                      // Lịch chính - chỉ ngày làm việc
                       SizedBox(
                         height: headerHeight + visibleTaskHeight + 20,
                         child: LayoutBuilder(
@@ -938,10 +966,10 @@ class _ChartScreenState extends State<ChartScreen> {
                             controller: _scrollController,
                             scrollDirection: Axis.horizontal,
                             child: SizedBox(
-                              width: totalDaysInView * dayWidth,
+                              width: workingDays.length * workingDayWidth,
                               child: Column(
                                 children: [
-                                  _buildDayHeaders(allDays),
+                                  _buildDayHeaders(workingDays),
                                   SizedBox(
                                     height: 150,
                                     child: Scrollbar(
@@ -955,8 +983,8 @@ class _ChartScreenState extends State<ChartScreen> {
                                           child: Stack(
                                             children: [
                                               _buildVerticalColumns(
-                                                  allDays,
-                                                  totalDaysInView * 45.0 +
+                                                  workingDays,
+                                                  workingDays.length * 45.0 +
                                                       headerHeight),
                                               ...taskWidgets,
                                             ],
@@ -973,7 +1001,7 @@ class _ChartScreenState extends State<ChartScreen> {
                       ),
                       Container(height: 2, color: Colors.grey.shade400),
 
-                      // 2 biểu đồ nhỏ
+                      // 2 biểu đồ tuần và tháng giữ nguyên
                       if (tasks.isNotEmpty) ...[
                         SizedBox(height: 220, child: _buildWeeklyChart(tasks)),
                         SizedBox(height: 220, child: _buildMonthlyChart(tasks)),
@@ -986,10 +1014,10 @@ class _ChartScreenState extends State<ChartScreen> {
   }
 
   // ==================== CÁC HÀM PHỤ ====================
-  Widget _buildVerticalColumns(List<DateTime> days, double height) {
+  Widget _buildVerticalColumns(List<DateTime> workingDays, double height) {
     final now = DateTime.now();
     return Row(
-      children: days.map((day) {
+      children: workingDays.map((day) {
         final isToday = now.year == day.year &&
             now.month == day.month &&
             now.day == day.day;
@@ -998,7 +1026,7 @@ class _ChartScreenState extends State<ChartScreen> {
             selectedDate!.month == day.month &&
             selectedDate!.day == day.day;
         return Container(
-          width: dayWidth,
+          width: workingDayWidth,
           height: height,
           decoration: BoxDecoration(
             border: Border(
@@ -1014,7 +1042,7 @@ class _ChartScreenState extends State<ChartScreen> {
     );
   }
 
-  Widget _buildDayHeaders(List<DateTime> days) {
+  Widget _buildDayHeaders(List<DateTime> workingDays) {
     final now = DateTime.now();
     return Container(
       height: headerHeight,
@@ -1025,7 +1053,7 @@ class _ChartScreenState extends State<ChartScreen> {
                 color: Color.fromARGB(255, 190, 188, 188), width: 2)),
       ),
       child: Row(
-        children: days.map((day) {
+        children: workingDays.map((day) {
           final isToday = now.year == day.year &&
               now.month == day.month &&
               now.day == day.day;
@@ -1034,11 +1062,10 @@ class _ChartScreenState extends State<ChartScreen> {
               selectedDate!.month == day.month &&
               selectedDate!.day == day.day;
           return Container(
-            width: dayWidth,
+            width: workingDayWidth,
             height: headerHeight,
             decoration: BoxDecoration(
-              border:
-                  const Border(right: BorderSide(color: Colors.grey, width: 1)),
+              border: Border(right: BorderSide(color: Colors.grey, width: 1)),
               color: isSelected
                   ? Colors.orange.shade100
                   : isToday
@@ -1049,26 +1076,26 @@ class _ChartScreenState extends State<ChartScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(DateFormat('EEE').format(day),
+                Text(DateFormat('EEE', 'vi').format(day),
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: 13,
                         color: isSelected
                             ? Colors.orange.shade800
                             : isToday
                                 ? Colors.blueAccent
                                 : Colors.black87)),
-                const SizedBox(height: 2),
-                Text(DateFormat('M/d').format(day),
+                const SizedBox(height: 4),
+                Text(DateFormat('d/M').format(day),
                     style: TextStyle(
                         fontWeight:
                             isSelected || isToday ? FontWeight.bold : null,
-                        fontSize: 11,
+                        fontSize: 14,
                         color: isSelected
                             ? Colors.orange.shade800
                             : isToday
                                 ? Colors.blueAccent
-                                : Colors.black54)),
+                                : Colors.black)),
               ],
             ),
           );
@@ -1078,8 +1105,10 @@ class _ChartScreenState extends State<ChartScreen> {
   }
 
   Map<String, dynamic> _buildTaskBars(
-      List<TaskModel> tasks, DateTime viewStart) {
-    if (tasks.isEmpty) return {'widgets': <Widget>[], 'maxRows': 0};
+      List<TaskModel> tasks, DateTime viewStart, List<DateTime> workingDays) {
+    if (tasks.isEmpty || workingDays.isEmpty) {
+      return {'widgets': <Widget>[], 'maxRows': 0};
+    }
 
     final colors = [
       Colors.blue.shade200,
@@ -1091,28 +1120,55 @@ class _ChartScreenState extends State<ChartScreen> {
       Colors.teal.shade200,
       Colors.indigo.shade200
     ];
+
     final List<List<Map<String, int>>> rows = [];
     final List<Widget> taskWidgets = [];
+
+    // Tạo map: DateTime -> index trong workingDays
+    final Map<DateTime, int> dateToIndex = {};
+    for (int i = 0; i < workingDays.length; i++) {
+      dateToIndex[DateTime(
+          workingDays[i].year, workingDays[i].month, workingDays[i].day)] = i;
+    }
 
     for (int i = 0; i < tasks.length; i++) {
       final task = tasks[i];
       final start = task.startDate;
       final end = task.endDate ?? task.startDate;
 
-      final startIndex = start.difference(viewStart).inDays;
-      final endIndex = end.difference(viewStart).inDays;
-      if (endIndex < 0 || startIndex >= totalDaysInView) continue;
+      final startKey = DateTime(start.year, start.month, start.day);
+      final endKey = DateTime(end.year, end.month, end.day);
 
-      final visibleStart = startIndex.clamp(0, totalDaysInView - 1);
-      final visibleEnd = endIndex.clamp(0, totalDaysInView - 1);
-      final taskWidth = (visibleEnd - visibleStart + 1) * dayWidth;
+      if (!dateToIndex.containsKey(startKey) &&
+          !dateToIndex.containsKey(endKey)) {
+        continue;
+      }
 
+      final visibleStartIndex = dateToIndex.containsKey(startKey)
+          ? dateToIndex[startKey]!
+          : dateToIndex.values.firstWhere(
+              (idx) => workingDays[idx].isAfter(startKey),
+              orElse: () => 0);
+
+      final visibleEndIndex = dateToIndex.containsKey(endKey)
+          ? dateToIndex[endKey]!
+          : dateToIndex.values.lastWhere(
+              (idx) => workingDays[idx].isBefore(endKey.add(Duration(days: 1))),
+              orElse: () => workingDays.length - 1);
+
+      if (visibleEndIndex < visibleStartIndex) continue;
+
+      final taskWidth =
+          (visibleEndIndex - visibleStartIndex + 1) * workingDayWidth;
+
+      // Gán hàng (row) tránh chồng lấn
       int assignedRow = 0;
       bool placed = false;
       for (int r = 0; r < rows.length; r++) {
         bool canPlace = true;
         for (final occ in rows[r]) {
-          if (!(visibleEnd < occ['start']! || visibleStart > occ['end']!)) {
+          if (!(visibleEndIndex < occ['start']! ||
+              visibleStartIndex > occ['end']!)) {
             canPlace = false;
             break;
           }
@@ -1120,21 +1176,21 @@ class _ChartScreenState extends State<ChartScreen> {
         if (canPlace) {
           assignedRow = r;
           placed = true;
-          rows[r].add({'start': visibleStart, 'end': visibleEnd});
+          rows[r].add({'start': visibleStartIndex, 'end': visibleEndIndex});
           break;
         }
       }
       if (!placed) {
         assignedRow = rows.length;
         rows.add([
-          {'start': visibleStart, 'end': visibleEnd}
+          {'start': visibleStartIndex, 'end': visibleEndIndex}
         ]);
       }
 
       final color = colors[i % colors.length];
       taskWidgets.add(
         Positioned(
-          left: visibleStart * dayWidth,
+          left: visibleStartIndex * workingDayWidth,
           top: 10 + assignedRow * 45,
           child: Container(
             width: taskWidth,
@@ -1145,20 +1201,22 @@ class _ChartScreenState extends State<ChartScreen> {
               border: Border.all(color: Colors.grey.shade400),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 2,
                     offset: const Offset(0, 1))
               ],
             ),
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(task.taskName,
-                style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1),
+            child: Text(
+              task.taskName,
+              style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ),
       );
@@ -1174,8 +1232,18 @@ class _ChartScreenState extends State<ChartScreen> {
 // Extension lấy tuần trong năm
 extension DateTimeExtension on DateTime {
   int get weekOfYear {
-    final firstDay = DateTime(year, 1, 1);
-    final days = difference(firstDay).inDays + firstDay.weekday - 1;
-    return days ~/ 7 + 1;
+    final jan4 = DateTime(year, 1, 4);
+    final daysFromJan4 = difference(jan4).inDays;
+    final thursdayOfThatWeek =
+        jan4.add(Duration(days: (4 - jan4.weekday) + daysFromJan4));
+    final weekNumber = ((thursdayOfThatWeek
+                    .difference(DateTime(thursdayOfThatWeek.year, 1, 4))
+                    .inDays) /
+                7)
+            .floor() +
+        1;
+    return weekNumber;
   }
+
+  DateTime get startOfWeek => subtract(Duration(days: weekday - 1));
 }
