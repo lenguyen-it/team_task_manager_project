@@ -96,7 +96,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       case 'Đang làm':
         return 'in_progress';
       case 'Chờ xác nhận':
-        return 'pending';
+        return 'wait';
       case 'Hoàn thành':
         return 'done';
       case 'Quá hạn':
@@ -124,7 +124,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final total = baseTasks.length;
     final newTasks = _countTasksByStatus(baseTasks, 'new_task');
     final inProgress = _countTasksByStatus(baseTasks, 'in_progress');
-    final pending = _countTasksByStatus(baseTasks, 'pending');
+    final wait = _countTasksByStatus(baseTasks, 'wait');
     final done = _countTasksByStatus(baseTasks, 'done');
     final overdue = _countTasksByStatus(baseTasks, 'overdue');
 
@@ -162,7 +162,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
               // Thống kê số lượng
               _buildStatsSection(
-                  total, newTasks, inProgress, pending, done, overdue),
+                  total, newTasks, inProgress, wait, done, overdue),
 
               const SizedBox(height: 4),
 
@@ -183,8 +183,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildStatsSection(int total, int newTasks, int inProgress,
-      int pending, int done, int overdue) {
+  Widget _buildStatsSection(int total, int newTasks, int inProgress, int wait,
+      int done, int overdue) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.count(
@@ -198,7 +198,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _buildStatCard('Toàn bộ công việc', total, const Color(0xFF6EC1E4)),
           _buildStatCard('Công việc mới', newTasks, const Color(0xFFB2EBF2)),
           _buildStatCard('Đang làm', inProgress, const Color(0xFFFFD54F)),
-          _buildStatCard('Chờ xác nhận', pending, const Color(0xFFB0BEC5)),
+          _buildStatCard('Chờ xác nhận', wait, const Color(0xFFB0BEC5)),
           _buildStatCard('Hoàn thành', done, const Color(0xFF81C784)),
           _buildStatCard('Quá hạn', overdue, const Color(0xFFE57373)),
         ],
@@ -377,7 +377,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               chipColor = Colors.yellow.shade700;
               break;
             case 'Chờ xác nhận':
-              chipColor = Colors.orange;
+              chipColor = Colors.grey.shade500;
               break;
             case 'Hoàn thành':
               chipColor = Colors.green;
@@ -570,7 +570,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         return 'Công việc mới';
       case 'in_progress':
         return 'Đang làm';
-      case 'pending':
+      case 'wait':
         return 'Chờ xác nhận';
       case 'done':
         return 'Hoàn thành';
@@ -615,9 +615,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       case 'in_progress':
       case 'đang làm':
         return Colors.yellow.shade700;
-      case 'pending':
+      case 'wait':
       case 'chờ xác nhận':
-        return Colors.orange;
+        return Colors.grey.shade500;
       case 'new_task':
       case 'công việc mới':
         return Colors.cyan;

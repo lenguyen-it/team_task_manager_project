@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Đang làm':
         return 'in_progress';
       case 'Chờ xác nhận':
-        return 'pending';
+        return 'wait';
       case 'Hoàn thành':
         return 'done';
       case 'Quá hạn':
@@ -406,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
               chipColor = Colors.yellow.shade700;
               break;
             case 'Chờ xác nhận':
-              chipColor = Colors.orange;
+              chipColor = Colors.grey.shade500;
               break;
             case 'Hoàn thành':
               chipColor = Colors.green;
@@ -597,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Công việc mới';
       case 'in_progress':
         return 'Đang làm';
-      case 'pending':
+      case 'wait':
         return 'Chờ xác nhận';
       case 'done':
         return 'Hoàn thành';
@@ -642,7 +642,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'in_progress':
       case 'đang làm':
         return Colors.orange;
-      case 'pending':
+      case 'wait':
       case 'chờ xác nhận':
         return Colors.grey;
       case 'new_task':
