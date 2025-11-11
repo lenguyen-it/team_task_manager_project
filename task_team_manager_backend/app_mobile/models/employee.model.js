@@ -25,7 +25,7 @@ const employeeSchema = mongoose.Schema({
   },
 
   phone: {
-    type: Number,
+    type: String,
   },
 
   birth: {
