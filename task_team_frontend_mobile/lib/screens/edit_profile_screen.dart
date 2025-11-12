@@ -312,7 +312,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 16),
 
               // Date of birth (Placeholder)
-              _buildDateField(
+              _buildDateEditField(
                 label: 'Ngày sinh:',
                 controller: _dobController,
                 onTap: _selectDate,
@@ -448,7 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildDateField({
+  Widget _buildDateEditField({
     required String label,
     required TextEditingController controller,
     required VoidCallback onTap,
