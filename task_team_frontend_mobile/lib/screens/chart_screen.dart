@@ -260,7 +260,7 @@ class _ChartScreenState extends State<ChartScreen> {
       weekStart.add(const Duration(days: 6));
 
       int workingDaysInMonth = 0;
-      for (int i = 0; i < 7; i++) {
+      for (int i = 0; i < 5; i++) {
         final d = weekStart.add(Duration(days: i));
         if (d.month == month &&
             d.weekday >= DateTime.monday &&
@@ -331,7 +331,7 @@ class _ChartScreenState extends State<ChartScreen> {
       getTitle: (value, _) {
         final key = value.toInt();
         final monday = _getMondayOfWeek(key);
-        final sunday = monday.add(const Duration(days: 6));
+        final sunday = monday.add(const Duration(days: 4));
         return '${DateFormat('dd').format(monday)}-${DateFormat('dd/MM').format(sunday)}';
       },
     );
@@ -508,15 +508,13 @@ class _ChartScreenState extends State<ChartScreen> {
     final year = weekKey ~/ 100;
     final week = weekKey % 100;
 
-    // Tìm ngày 4/1 của năm đó
     final jan4 = DateTime(year, 1, 4);
-    final daysToFirstMonday =
-        (1 - jan4.weekday + 7) % 7; // khoảng cách đến Thứ 2 đầu tiên
-    final firstMonday = jan4
-        .subtract(Duration(days: jan4.weekday - 1))
-        .add(Duration(days: daysToFirstMonday));
+    final jan4Weekday = jan4.weekday;
 
-    return firstMonday.add(Duration(days: (week - 1) * 7));
+    final daysToMonday = (jan4Weekday - 1 + 7) % 7;
+    final firstMondayOfWeek1 = jan4.subtract(Duration(days: daysToMonday));
+
+    return firstMondayOfWeek1.add(Duration(days: (week - 1) * 7));
   }
 
   // ==================== BIỂU ĐỒ THÁNG ====================
@@ -1233,17 +1231,15 @@ class _ChartScreenState extends State<ChartScreen> {
 extension DateTimeExtension on DateTime {
   int get weekOfYear {
     final jan4 = DateTime(year, 1, 4);
-    final daysFromJan4 = difference(jan4).inDays;
-    final thursdayOfThatWeek =
-        jan4.add(Duration(days: (4 - jan4.weekday) + daysFromJan4));
-    final weekNumber = ((thursdayOfThatWeek
-                    .difference(DateTime(thursdayOfThatWeek.year, 1, 4))
-                    .inDays) /
-                7)
-            .floor() +
-        1;
-    return weekNumber;
+    final jan4Weekday = jan4.weekday;
+
+    final daysToMonday = (jan4Weekday - DateTime.monday + 7) % 7;
+    final firstMondayOfYear = jan4.subtract(Duration(days: daysToMonday));
+
+    final daysSinceFirstMonday = difference(firstMondayOfYear).inDays;
+    return (daysSinceFirstMonday ~/ 7) + 1;
   }
 
-  DateTime get startOfWeek => subtract(Duration(days: weekday - 1));
+  DateTime get startOfWeek =>
+      subtract(Duration(days: weekday - DateTime.monday));
 }
