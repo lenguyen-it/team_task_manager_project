@@ -6,6 +6,7 @@ import '../models/task_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/tasktype_provider.dart';
+import 'detail_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -235,17 +236,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       scrollDirection: Axis.horizontal,
                       itemCount: tasks.length,
                       itemBuilder: (_, i) {
-                        final t = tasks[i];
-                        final color = _getStatusColor(t.status);
-                        final statusVi = _statusEnToVi(t.status);
+                        final task = tasks[i];
+                        final color = _getStatusColor(task.status);
+                        final statusVi = _statusEnToVi(task.status);
                         return Padding(
                           padding: const EdgeInsets.only(right: 12),
                           child: _buildTaskChip(
-                            t.taskName,
-                            t.description ?? '',
+                            task.taskName,
+                            task.description ?? '',
                             color,
                             statusVi,
-                            t.tasktypeId,
+                            task.tasktypeId,
+                            task,
                           ),
                         );
                       },
@@ -365,20 +367,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: displayTasks.length,
                     itemBuilder: (_, i) {
-                      final t = displayTasks[i];
-                      final color = _getStatusColor(t.status);
-                      final statusVi = _statusEnToVi(t.status);
-                      final priorityVi = _priorityEnToVi(t.priority);
-                      final priorityColor = _getPriorityColor(t.priority);
-                      final range = _formatDateRange(t.startDate, t.endDate);
+                      final task = displayTasks[i];
+                      final color = _getStatusColor(task.status);
+                      final statusVi = _statusEnToVi(task.status);
+                      final priorityVi = _priorityEnToVi(task.priority);
+                      final priorityColor = _getPriorityColor(task.priority);
+                      final range =
+                          _formatDateRange(task.startDate, task.endDate);
                       return _buildTaskItem(
-                        t.taskName,
+                        task.taskName,
                         statusVi,
                         color,
                         range,
-                        t.tasktypeId,
+                        task.tasktypeId,
                         priorityVi,
                         priorityColor,
+                        task,
                       );
                     },
                   ),
@@ -450,55 +454,75 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color,
     String status,
     String tasktypeId,
+    TaskModel task,
   ) {
-    return Container(
-      width: 180,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        // hoặc GestureDetector
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            taskName,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          if (desc.isNotEmpty)
-            Text(
-              desc,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailTaskScreen(task: task),
             ),
-          const SizedBox(height: 4),
-          Text(
-            _getTaskTypeName(tasktypeId),
-            style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          );
+        },
+        child: Container(
+          width: 180,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 10),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                taskName,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // const SizedBox(height: 4),
+              // if (desc.isNotEmpty)
+              //   Text(
+              //     desc,
+              //     style: const TextStyle(fontSize: 11, color: Colors.grey),
+              //     maxLines: 1,
+              //     overflow: TextOverflow.ellipsis,
+              //   ),
+              const SizedBox(height: 4),
+              Text(
+                _getTaskTypeName(tasktypeId),
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -511,81 +535,94 @@ class _HomeScreenState extends State<HomeScreen> {
     String tasktypeId,
     String priority,
     Color priorityColor,
+    TaskModel task, // Thêm tham số task
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    taskName,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getTaskTypeName(tasktypeId),
-                    style:
-                        const TextStyle(fontSize: 12, color: Colors.blueGrey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text('Độ ưu tiên: ',
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.black87)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                            color: priorityColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8)),
-                        child: Text(priority,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: priorityColor,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailTaskScreen(task: task),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(20),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      taskName,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getTaskTypeName(tasktypeId),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      date,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Text('Độ ưu tiên: ',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.black87)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: priorityColor.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Text(priority,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: priorityColor,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              child: Text(
-                status,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
