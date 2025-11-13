@@ -2,7 +2,7 @@
 const express = require("express");
 const authController = require("../controllers/auth.controller");
 const { verifyToken, authorize } = require("../middlewares/auth.middleware");
-const { uploadImage } = require("../services/employee.service");
+const { uploadAvatar } = require("../middlewares/upload.middleware");
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post(
   "/register",
   verifyToken,
   authorize(["admin", "manager"]),
-  uploadImage.single("image"),
+  uploadAvatar,
   authController.register
 );
 
