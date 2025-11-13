@@ -1,9 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:task_team_frontend_mobile/models/task_model.dart';
-
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/project_provider.dart';
 import 'package:task_team_frontend_mobile/providers/task_provider.dart';
@@ -25,11 +26,16 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
   String? projectName;
   String? tasktypeName;
 
+  TaskModel? _currentTask;
+
   // Controllers và state cho chỉnh sửa
   late TextEditingController _descriptionController;
   late String _selectedStatus;
 
   bool _isLoading = false;
+
+  // Danh sách files được chọn
+  List<File> _selectedFiles = [];
 
   // Danh sách trạng thái
   final List<Map<String, String>> _statusOptions = [
@@ -48,6 +54,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
       text: widget.task.description ?? '',
     );
     _selectedStatus = widget.task.status;
+    _currentTask = widget.task;
     _loadData();
   }
 
@@ -101,11 +108,114 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
     }
   }
 
-  void _handleSave() async {
-    print('Saving...');
-    print('Status: $_selectedStatus');
-    print('Description: ${_descriptionController.text}');
+  // Chọn files để upload
+  Future<void> _pickFiles() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: [
+          'jpg',
+          'jpeg',
+          'png',
+          'pdf',
+          'doc',
+          'docx',
+          'xlsx',
+          'xls',
+          'txt',
+        ],
+      );
 
+      if (result != null) {
+        setState(() {
+          _selectedFiles = result.paths.map((path) => File(path!)).toList();
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi chọn tệp: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Xóa file khỏi danh sách đã chọn
+  void _removeSelectedFile(int index) {
+    setState(() {
+      _selectedFiles.removeAt(index);
+    });
+  }
+
+  Future<void> _deleteAttachment(String attachmentId, String fileName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: Text('Bạn có chắc muốn xóa tệp "$fileName"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xóa', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      if (token == null) throw Exception('Token không tồn tại');
+
+      final provider = Provider.of<TaskProvider>(context, listen: false);
+      final success = await provider.deleteAttachment(
+        taskId: widget.task.taskId,
+        attachmentId: attachmentId,
+        token: token,
+      );
+
+      if (success) {
+        // Reload task từ server
+        await provider.getTaskById(widget.task.taskId, token);
+        setState(() {
+          _currentTask = provider.tasks.first; // Cập nhật local state
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Xóa tệp thành công'),
+              backgroundColor: Colors.green),
+        );
+      } else {
+        _showError(provider.error);
+      }
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showError(String? message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(message ?? 'Lỗi không xác định'),
+          backgroundColor: Colors.red),
+    );
+  }
+
+  void _handleSave() async {
     setState(() {
       _isLoading = true;
     });
@@ -118,26 +228,32 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
         throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
       }
 
-      final updateTask = widget.task.copyWith(
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        status: _selectedStatus,
-      );
-
       final provider = Provider.of<TaskProvider>(context, listen: false);
+
+      // Tạo taskData chỉ với những field cần update
+      Map<String, dynamic> taskData = {
+        'status': _selectedStatus,
+        'description': _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
+      };
+
+      // Gọi updateTask với named parameters
       final success = await provider.updateTask(
-        widget.task.taskId,
-        updateTask,
-        token,
+        taskId: widget.task.taskId,
+        token: token,
+        taskData: taskData,
+        files: _selectedFiles.isNotEmpty ? _selectedFiles : null,
       );
 
       if (!mounted) return;
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cập nhật thông tin thành công'),
+          SnackBar(
+            content: Text(_selectedFiles.isNotEmpty
+                ? 'Cập nhật thông tin và tải lên ${_selectedFiles.length} tệp thành công'
+                : 'Cập nhật thông tin thành công'),
             backgroundColor: Colors.green,
           ),
         );
@@ -190,7 +306,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
       ),
       body: GestureDetector(
         onTap: () {
-          FocusScope.of(context).unfocus(); // TẮT BÀN PHÍM KHI CHẠM RA NGOÀI
+          FocusScope.of(context).unfocus();
         },
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -300,15 +416,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
                 children: [
                   _buildLabel('Tệp đính kèm:'),
                   TextButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Chức năng thêm tệp đang được phát triển'),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
-                    },
+                    onPressed: _pickFiles,
                     icon: const Icon(
                       Icons.add,
                       color: Colors.blue,
@@ -326,6 +434,62 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
                 ],
               ),
 
+              // Hiển thị files đã chọn (chưa upload)
+              if (_selectedFiles.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tệp mới (chưa lưu):',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...List.generate(_selectedFiles.length, (index) {
+                        final file = _selectedFiles[index];
+                        final fileName = file.path.split('/').last;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.insert_drive_file,
+                                  size: 16, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  fileName,
+                                  style: const TextStyle(fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 18),
+                                color: Colors.red,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _removeSelectedFile(index),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 8),
               _buildAttachmentSection(),
               const SizedBox(height: 32),
 
@@ -334,7 +498,8 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(
@@ -358,7 +523,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _handleSave,
+                      onPressed: _isLoading ? null : _handleSave,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -370,14 +535,23 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
                           ),
                         ),
                       ),
-                      child: const Text(
-                        'Lưu',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Lưu',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -498,7 +672,6 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
     );
   }
 
-  // TextField có thể chỉnh sửa cho nội dung công việc
   Widget _buildMultilineField() {
     return Container(
       width: double.infinity,
@@ -528,6 +701,29 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
   }
 
   Widget _buildAttachmentSection() {
+    // Kiểm tra xem task có attachments không
+    if (_currentTask!.attachments.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Text(
+            'Chưa có tệp đính kèm',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black45,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -538,20 +734,30 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildAttachmentItem('file_cong_viec_abc.pdf'),
-          const Divider(height: 24),
-          _buildAttachmentItem('file_cong_viec_abc.doc'),
-          const Divider(height: 24),
-          _buildAttachmentItem('file_cong_viec_abc.jpg'),
-        ],
+        children: List.generate(
+          widget.task.attachments.length,
+          (index) {
+            final attachment = widget.task.attachments[index];
+            return Column(
+              children: [
+                if (index > 0) const Divider(height: 24),
+                _buildAttachmentItem(
+                  attachment.fileName,
+                  attachment.attachmentId ?? '',
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildAttachmentItem(String fileName) {
+  Widget _buildAttachmentItem(String fileName, String attachmentId) {
     return Row(
       children: [
+        const Icon(Icons.attach_file, size: 18, color: Colors.black54),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             fileName,
@@ -563,18 +769,10 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.close, size: 20),
-          color: Colors.grey,
+          color: Colors.red,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text('Chức năng xóa tệp "$fileName" đang được phát triển'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          },
+          onPressed: () => _deleteAttachment(attachmentId, fileName),
         ),
       ],
     );
