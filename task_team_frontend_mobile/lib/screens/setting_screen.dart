@@ -183,7 +183,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          employee?.roleId ?? 'N/A',
+                          employee?.employeeId ?? 'N/A',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
