@@ -37,6 +37,8 @@ class _ChartScreenState extends State<ChartScreen> {
   DateTime? selectedMonth;
   int? selectedYear;
 
+  bool _hasLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +53,7 @@ class _ChartScreenState extends State<ChartScreen> {
     selectedYear = now.year;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTasksOnce();
       _setInitialScroll();
       _scrollToCurrentWeek();
       _scrollToCurrentMonth();
@@ -136,30 +139,47 @@ class _ChartScreenState extends State<ChartScreen> {
     final now = DateTime.now();
     final weekKey = now.year * 100 + now.weekOfYear;
     final index = _getWeekIndex(weekKey);
-    if (index >= 0 && _weeklyChartScrollController.hasClients) {
+
+    if (index < 0) return;
+
+    // Đợi cho đến khi scrollController đã gắn vào widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_weeklyChartScrollController.hasClients) {
+        // Nếu chưa có, đợi 1 frame nữa
+        Future.delayed(const Duration(milliseconds: 100), _scrollToCurrentWeek);
+        return;
+      }
+
       final target =
           index * barWidth - (visibleBarsCount * barWidth / 2) + barWidth / 2;
-      final safe = target.clamp(
-          0.0, _weeklyChartScrollController.position.maxScrollExtent);
+      final maxScroll = _weeklyChartScrollController.position.maxScrollExtent;
+      final safe = target.clamp(0.0, maxScroll);
+
       _weeklyChartScrollController.animateTo(
         safe,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
-    }
+    });
   }
 
   void _scrollToCurrentMonth() {
     final now = DateTime.now();
-
     final viewYear = selectedYear ?? now.year;
     final currentIndexInView = now.year == viewYear ? now.month - 1 : -1;
 
-    if (currentIndexInView >= 0 && _monthlyChartScrollController.hasClients) {
+    if (currentIndexInView < 0) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_monthlyChartScrollController.hasClients) {
+        Future.delayed(
+            const Duration(milliseconds: 100), _scrollToCurrentMonth);
+        return;
+      }
+
       final target = currentIndexInView * barWidth -
           (visibleBarsCount * barWidth / 2) +
           barWidth / 2;
-
       final maxScroll = _monthlyChartScrollController.position.maxScrollExtent;
       final safeOffset = target.clamp(0.0, maxScroll);
 
@@ -168,6 +188,36 @@ class _ChartScreenState extends State<ChartScreen> {
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
+    });
+  }
+
+  void _loadTasksOnce() async {
+    if (_hasLoaded) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    if (authProvider.isAuthenticated &&
+        authProvider.currentEmployee != null &&
+        authProvider.token != null) {
+      await taskProvider.getTaskByEmployee(
+        authProvider.token!,
+        authProvider.currentEmployee!.employeeId,
+      );
+    }
+
+    if (mounted) {
+      setState(() {
+        _hasLoaded = true;
+      });
+      _updateTimelineRange(taskProvider.tasks);
+
+      // Đảm bảo scroll sau khi biểu đồ được build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToCurrentWeek();
+        _scrollToCurrentMonth();
+        _setInitialScroll();
+      });
     }
   }
 
@@ -211,27 +261,37 @@ class _ChartScreenState extends State<ChartScreen> {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final taskProvider = Provider.of<TaskProvider>(context);
-    final authProvider = context.read<AuthProvider>();
+  double _getInterval(List<BarChartGroupData> data) {
+    if (data.isEmpty) return 1;
 
-    if (authProvider.isAuthenticated &&
-        authProvider.currentEmployee != null &&
-        authProvider.token != null &&
-        taskProvider.tasks.isEmpty &&
-        !taskProvider.isLoading) {
-      taskProvider
-          .getTaskByEmployee(
-              authProvider.token!, authProvider.currentEmployee!.employeeId)
-          .then((_) {
-        if (mounted) _updateTimelineRange(taskProvider.tasks);
-      });
-    } else if (taskProvider.tasks.isNotEmpty) {
-      _updateTimelineRange(taskProvider.tasks);
-    }
+    double maxY =
+        data.map((e) => e.barRods.first.toY).reduce((a, b) => a > b ? a : b);
+
+    double interval = (maxY / 5).ceilToDouble();
+    return interval == 0 ? 1 : interval;
   }
+
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   final taskProvider = Provider.of<TaskProvider>(context);
+  //   final authProvider = context.read<AuthProvider>();
+
+  //   if (authProvider.isAuthenticated &&
+  //       authProvider.currentEmployee != null &&
+  //       authProvider.token != null &&
+  //       taskProvider.tasks.isEmpty &&
+  //       !taskProvider.isLoading) {
+  //     taskProvider
+  //         .getTaskByEmployee(
+  //             authProvider.token!, authProvider.currentEmployee!.employeeId)
+  //         .then((_) {
+  //       if (mounted) _updateTimelineRange(taskProvider.tasks);
+  //     });
+  //   } else if (taskProvider.tasks.isNotEmpty) {
+  //     _updateTimelineRange(taskProvider.tasks);
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -750,6 +810,7 @@ class _ChartScreenState extends State<ChartScreen> {
 
     final totalBars = data.length;
     final chartWidth = totalBars * barWidth;
+    final interval = _getInterval(data);
 
     return Container(
       height: 200,
@@ -786,7 +847,7 @@ class _ChartScreenState extends State<ChartScreen> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 20,
-                            interval: 1,
+                            interval: interval,
                           ),
                         ),
                         bottomTitles: AxisTitles(
@@ -811,10 +872,12 @@ class _ChartScreenState extends State<ChartScreen> {
                               left: BorderSide(color: Colors.black, width: 1))),
                       gridData: FlGridData(show: false),
                       minY: 0,
-                      maxY: data
-                              .map((e) => e.barRods.first.toY)
-                              .reduce((a, b) => a > b ? a : b) +
-                          1,
+                      maxY: data.isNotEmpty
+                          ? data
+                                  .map((e) => e.barRods.first.toY)
+                                  .reduce((a, b) => a > b ? a : b) +
+                              1
+                          : 1,
                     ),
                   ),
                 ),
@@ -929,85 +992,177 @@ class _ChartScreenState extends State<ChartScreen> {
                 fontSize: 24,
                 fontWeight: FontWeight.bold)),
       ),
+      // body: taskProvider.isLoading
+      //     ? const Center(child: CircularProgressIndicator())
+      //     : tasks.isEmpty
+      //         ? const Center(child: Text('Không có task nào để hiển thị'))
+      //         : SingleChildScrollView(
+      //             child: Column(
+      //               children: [
+      //                 // Header ngày
+      //                 Container(
+      //                   padding: const EdgeInsets.symmetric(horizontal: 16),
+      //                   color: Colors.grey.shade50,
+      //                   child: Row(
+      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      //                     children: [
+      //                       const Text('Biểu đồ ngày',
+      //                           style: TextStyle(
+      //                               fontSize: 20, fontWeight: FontWeight.bold)),
+      //                       IconButton(
+      //                           icon: const Icon(Icons.calendar_today,
+      //                               color: Colors.blueAccent),
+      //                           onPressed: () => _selectDate(context)),
+      //                     ],
+      //                   ),
+      //                 ),
+      //                 Container(height: 2, color: Colors.grey.shade400),
+
+      //                 // Lịch chính - chỉ ngày làm việc
+      //                 SizedBox(
+      //                   height: headerHeight + visibleTaskHeight + 20,
+      //                   child: LayoutBuilder(
+      //                     builder: (context, constraints) =>
+      //                         SingleChildScrollView(
+      //                       controller: _scrollController,
+      //                       scrollDirection: Axis.horizontal,
+      //                       child: SizedBox(
+      //                         width: workingDays.length * workingDayWidth,
+      //                         child: Column(
+      //                           children: [
+      //                             _buildDayHeaders(workingDays),
+      //                             SizedBox(
+      //                               height: 150,
+      //                               child: Scrollbar(
+      //                                 controller: _verticalScrollController,
+      //                                 thumbVisibility: false,
+      //                                 child: SingleChildScrollView(
+      //                                   controller: _verticalScrollController,
+      //                                   child: SizedBox(
+      //                                     height:
+      //                                         headerHeight + visibleTaskHeight,
+      //                                     child: Stack(
+      //                                       children: [
+      //                                         _buildVerticalColumns(
+      //                                             workingDays,
+      //                                             workingDays.length * 45.0 +
+      //                                                 headerHeight),
+      //                                         ...taskWidgets,
+      //                                       ],
+      //                                     ),
+      //                                   ),
+      //                                 ),
+      //                               ),
+      //                             ),
+      //                           ],
+      //                         ),
+      //                       ),
+      //                     ),
+      //                   ),
+      //                 ),
+      //                 Container(height: 2, color: Colors.grey.shade400),
+
+      //                 if (tasks.isNotEmpty) ...[
+      //                   SizedBox(height: 220, child: _buildWeeklyChart(tasks)),
+      //                   SizedBox(height: 220, child: _buildMonthlyChart(tasks)),
+      //                   const Divider(height: 1, color: Colors.grey),
+      //                 ],
+      //               ],
+      //             ),
+      //           ),
       body: taskProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : tasks.isEmpty
-              ? const Center(child: Text('Không có task nào để hiển thị'))
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // Header ngày
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        color: Colors.grey.shade50,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // === HEADER NGÀY ===
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    color: Colors.grey.shade50,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Biểu đồ ngày',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today,
+                              color: Colors.blueAccent),
+                          onPressed: () => _selectDate(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(height: 2, color: Colors.grey.shade400),
+
+                  // === LỊCH CHÍNH (Gantt) ===
+                  if (tasks.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
                           children: [
-                            const Text('Biểu đồ ngày',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold)),
-                            IconButton(
-                                icon: const Icon(Icons.calendar_today,
-                                    color: Colors.blueAccent),
-                                onPressed: () => _selectDate(context)),
+                            Icon(Icons.task_alt, size: 48, color: Colors.grey),
+                            SizedBox(height: 12),
+                            Text('Không có task nào',
+                                style: TextStyle(fontSize: 16)),
+                            Text('Nhân viên chưa được giao việc',
+                                style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                       ),
-                      Container(height: 2, color: Colors.grey.shade400),
-
-                      // Lịch chính - chỉ ngày làm việc
-                      SizedBox(
-                        height: headerHeight + visibleTaskHeight + 20,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) =>
-                              SingleChildScrollView(
-                            controller: _scrollController,
-                            scrollDirection: Axis.horizontal,
-                            child: SizedBox(
-                              width: workingDays.length * workingDayWidth,
-                              child: Column(
-                                children: [
-                                  _buildDayHeaders(workingDays),
-                                  SizedBox(
-                                    height: 150,
-                                    child: Scrollbar(
+                    )
+                  else
+                    SizedBox(
+                      height: headerHeight + visibleTaskHeight + 20,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                          controller: _scrollController,
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: workingDays.length * workingDayWidth,
+                            child: Column(
+                              children: [
+                                _buildDayHeaders(workingDays),
+                                SizedBox(
+                                  height: 150,
+                                  child: Scrollbar(
+                                    controller: _verticalScrollController,
+                                    thumbVisibility: false,
+                                    child: SingleChildScrollView(
                                       controller: _verticalScrollController,
-                                      thumbVisibility: false,
-                                      child: SingleChildScrollView(
-                                        controller: _verticalScrollController,
-                                        child: SizedBox(
-                                          height:
-                                              headerHeight + visibleTaskHeight,
-                                          child: Stack(
-                                            children: [
-                                              _buildVerticalColumns(
-                                                  workingDays,
-                                                  workingDays.length * 45.0 +
-                                                      headerHeight),
-                                              ...taskWidgets,
-                                            ],
-                                          ),
+                                      child: SizedBox(
+                                        height:
+                                            headerHeight + visibleTaskHeight,
+                                        child: Stack(
+                                          children: [
+                                            _buildVerticalColumns(
+                                                workingDays,
+                                                workingDays.length * 45.0 +
+                                                    headerHeight),
+                                            ...taskWidgets,
+                                          ],
                                         ),
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                      Container(height: 2, color: Colors.grey.shade400),
+                    ),
+                  Container(height: 2, color: Colors.grey.shade400),
 
-                      // 2 biểu đồ tuần và tháng giữ nguyên
-                      if (tasks.isNotEmpty) ...[
-                        SizedBox(height: 220, child: _buildWeeklyChart(tasks)),
-                        SizedBox(height: 220, child: _buildMonthlyChart(tasks)),
-                        const Divider(height: 1, color: Colors.grey),
-                      ],
-                    ],
-                  ),
-                ),
+                  // === BIỂU ĐỒ TUẦN & THÁNG – LUÔN HIỂN THỊ ===
+                  SizedBox(height: 220, child: _buildWeeklyChart(tasks)),
+                  SizedBox(height: 220, child: _buildMonthlyChart(tasks)),
+                  const Divider(height: 1, color: Colors.grey),
+                ],
+              ),
+            ),
     );
   }
 
