@@ -1,5 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'package:task_team_frontend_mobile/config/api_config.dart';
 import 'package:task_team_frontend_mobile/models/task_model.dart';
@@ -33,9 +36,7 @@ class TaskService {
   Future<TaskModel> getTaskById(String taskId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse(
-          ApiConfig.getTaskById(taskId),
-        ),
+        Uri.parse(ApiConfig.getTaskById(taskId)),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -79,7 +80,6 @@ class TaskService {
 
   Future<List<TaskModel>> getTaskByEmployee(
       String employeeId, String token) async {
-    // FIX: Kiểm tra độ dài token trước khi substring
     if (token.length > 40) {
       print('TOKEN GỬI ĐI: ${token.substring(0, 40)}...');
     } else {
@@ -142,9 +142,7 @@ class TaskService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return TaskModel.fromJson(
-          json.decode(response.body),
-        );
+        return TaskModel.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
         throw Exception(error['message'] ?? 'Tạo task thất bại');
@@ -154,28 +152,153 @@ class TaskService {
     }
   }
 
-  Future<TaskModel> updateTask(
-      String taskId, TaskModel task, String token) async {
+  // Cập nhật task (có thể kèm files hoặc không)
+  Future<Map<String, dynamic>> updateTask({
+    required String taskId,
+    required String token,
+    Map<String, dynamic>? taskData,
+    List<File>? files,
+  }) async {
     try {
-      final response = await http.put(
-        Uri.parse(
-          ApiConfig.updateTask(taskId),
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(task.toJson()),
+      var request = http.MultipartRequest(
+        'PUT',
+        Uri.parse(ApiConfig.updateTask(taskId)),
       );
 
+      // Thêm header
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Thêm dữ liệu task (nếu có)
+      if (taskData != null) {
+        taskData.forEach((key, value) {
+          if (value != null) {
+            request.fields[key] = value.toString();
+          }
+        });
+      }
+
+      // Thêm files (nếu có)
+      if (files != null && files.isNotEmpty) {
+        for (var file in files) {
+          var stream = http.ByteStream(file.openRead());
+          var length = await file.length();
+
+          String? mimeType = lookupMimeType(file.path);
+
+          var multipartFile = http.MultipartFile(
+            'files',
+            stream,
+            length,
+            filename: file.path.split('/').last,
+            contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+          );
+          request.files.add(multipartFile);
+        }
+      }
+
+      print('Updating task $taskId...');
+      print('Fields: ${request.fields}');
+      print('Files count: ${request.files.length}');
+
+      // Gửi request
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      print('Update task - Status: ${response.statusCode}');
+      print('Response: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return TaskModel.fromJson(json.decode(response.body));
+        final data = json.decode(response.body);
+        return data;
       } else {
         final error = json.decode(response.body);
         throw Exception(error['message'] ?? 'Cập nhật task thất bại');
       }
     } catch (e) {
       throw Exception('Lỗi cập nhật task: $e');
+    }
+  }
+
+  // Chỉ upload files
+  Future<Map<String, dynamic>> uploadFilesForTask({
+    required String taskId,
+    required String token,
+    required List<File> files,
+  }) async {
+    try {
+      if (files.isEmpty) {
+        throw Exception('Không có file nào để upload');
+      }
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiConfig.updateOnlyFileforTask(taskId)),
+      );
+
+      // Thêm header
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Thêm files
+      for (var file in files) {
+        var stream = http.ByteStream(file.openRead());
+        var length = await file.length();
+        String? mimeType = lookupMimeType(file.path);
+        var multipartFile = http.MultipartFile(
+          'files',
+          stream,
+          length,
+          filename: file.path.split('/').last,
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+        );
+        request.files.add(multipartFile);
+      }
+
+      print('Uploading ${files.length} file(s) for task $taskId...');
+
+      // Gửi request
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      print('Upload files - Status: ${response.statusCode}');
+      print('Response: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Upload files thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi upload files: $e');
+    }
+  }
+
+  // Xóa một file attachment
+  Future<Map<String, dynamic>> deleteAttachment({
+    required String taskId,
+    required String attachmentId,
+    required String token,
+  }) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.getTaskById(taskId)}/attachments/$attachmentId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('Delete attachment - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Xóa file thất bại');
+      }
+    } catch (e) {
+      throw Exception('Lỗi xóa file: $e');
     }
   }
 
