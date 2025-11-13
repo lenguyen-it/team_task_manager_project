@@ -1,51 +1,36 @@
-class Attachment {
-  final String? attachmentId;
-  final String fileName;
-  final String fileUrl;
-  final String? fileType;
-  final int? size;
-  final DateTime uploadedAt;
-  final String? uploadedBy;
+import 'attachment.dart';
 
-  Attachment({
-    this.attachmentId,
-    required this.fileName,
-    required this.fileUrl,
-    this.fileType,
-    this.size,
-    DateTime? uploadedAt,
-    this.uploadedBy,
-  }) : uploadedAt = uploadedAt ?? DateTime.now();
+enum TaskStatus {
+  newTask,
+  inProgress,
+  overdue,
+  done,
+  pause,
+  wait;
 
-  factory Attachment.fromJson(Map<String, dynamic> json) {
-    return Attachment(
-      attachmentId: json['attachment_id']?.toString() ?? '',
-      fileName: json['file_name']?.toString() ?? '',
-      fileUrl: json['file_url']?.toString() ?? '',
-      fileType: json['file_type'],
-      size: json['size'] is num ? json['size'].toInt() : null,
-      uploadedAt: json['uploaded_at'] != null
-          ? DateTime.parse(json['uploaded_at'])
-          : DateTime.now(),
-      uploadedBy: json['uploaded_by']?.toString(),
-    );
-  }
+  String get value => _statusToString(this);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'attachment_id': attachmentId,
-      'file_name': fileName,
-      'file_url': fileUrl,
-      'file_type': fileType,
-      'size': size,
-      'uploaded_at': uploadedAt.toIso8601String(),
-      'uploaded_by': uploadedBy,
+  static TaskStatus fromString(String value) {
+    return switch (value) {
+      'new_task' => TaskStatus.newTask,
+      'in_progress' => TaskStatus.inProgress,
+      'overdue' => TaskStatus.overdue,
+      'done' => TaskStatus.done,
+      'pause' => TaskStatus.pause,
+      'wait' => TaskStatus.wait,
+      _ => TaskStatus.newTask,
     };
   }
 
-  @override
-  String toString() {
-    return 'Attachment(fileName:$attachmentId $fileName, fileUrl: $fileUrl)';
+  static String _statusToString(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.newTask => 'new_task',
+      TaskStatus.inProgress => 'in_progress',
+      TaskStatus.overdue => 'overdue',
+      TaskStatus.done => 'done',
+      TaskStatus.pause => 'pause',
+      TaskStatus.wait => 'wait',
+    };
   }
 }
 
@@ -57,7 +42,7 @@ class TaskModel {
   final DateTime startDate;
   final DateTime? endDate;
   final String priority;
-  final String status;
+  final TaskStatus status;
   final String? parentTaskId;
   final String projectId;
   final String tasktypeId;
@@ -73,7 +58,7 @@ class TaskModel {
     DateTime? startDate,
     this.endDate,
     this.priority = 'low',
-    this.status = 'new_task',
+    TaskStatus? status,
     this.parentTaskId,
     required this.projectId,
     required this.tasktypeId,
@@ -81,7 +66,24 @@ class TaskModel {
     List<Attachment>? attachments,
     this.projectName,
   })  : startDate = startDate ?? DateTime.now(),
+        status = status ??
+            _calculateInitialStatus(startDate ?? DateTime.now(), endDate),
         attachments = attachments ?? [];
+
+  static TaskStatus _calculateInitialStatus(DateTime start, DateTime? end) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startDay = DateTime(start.year, start.month, start.day);
+    final endDay = end != null ? DateTime(end.year, end.month, end.day) : null;
+
+    if (today.isBefore(startDay)) {
+      return TaskStatus.newTask;
+    }
+    if (endDay != null && today.isAfter(endDay)) {
+      return TaskStatus.overdue;
+    }
+    return TaskStatus.inProgress;
+  }
 
   TaskModel copyWith({
     String? id,
@@ -91,7 +93,7 @@ class TaskModel {
     DateTime? startDate,
     DateTime? endDate,
     String? priority,
-    String? status,
+    TaskStatus? status,
     String? parentTaskId,
     String? projectId,
     String? tasktypeId,
@@ -117,6 +119,22 @@ class TaskModel {
     );
   }
 
+  /// Tự động cập nhật status dựa trên ngày
+  /// Chỉ cập nhật nếu status KHÔNG phải là done, pause, hoặc wait
+  TaskModel updateStatus() {
+    // Giữ nguyên status nếu là done, pause, hoặc wait
+    if (status == TaskStatus.done ||
+        status == TaskStatus.pause ||
+        status == TaskStatus.wait) {
+      return this;
+    }
+
+    final newStatus = _calculateInitialStatus(startDate, endDate);
+    if (status == newStatus) return this;
+    return copyWith(status: newStatus);
+  }
+
+  /// Parse từ JSON (API/DB)
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
       id: json['_id']?.toString(),
@@ -129,7 +147,7 @@ class TaskModel {
       endDate:
           json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
       priority: json['priority'] ?? 'normal',
-      status: json['status'] ?? 'new_task',
+      status: TaskStatus.fromString(json['status'] ?? 'new_task'),
       parentTaskId: json['parent_task_id']?.toString(),
       projectId: json['project_id'] is Map
           ? json['project_id']['project_id'].toString()
@@ -149,17 +167,21 @@ class TaskModel {
   static List<String> _parseAssignedTo(dynamic assignedTo) {
     if (assignedTo == null) return [];
     if (assignedTo is List) {
-      return assignedTo.map((e) {
-        if (e is Map) {
-          return e['employee_id']?.toString() ?? '';
-        }
-        return e.toString();
-      }).toList();
+      return assignedTo
+          .map((e) {
+            if (e is Map) {
+              return e['employee_id']?.toString() ?? '';
+            }
+            return e.toString();
+          })
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
-    if (assignedTo is String) return [assignedTo];
+    if (assignedTo is String && assignedTo.isNotEmpty) return [assignedTo];
     return [];
   }
 
+  /// Chuyển sang JSON để gửi API
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
@@ -169,7 +191,7 @@ class TaskModel {
       'start_date': startDate.toIso8601String(),
       'end_date': endDate?.toIso8601String(),
       'priority': priority,
-      'status': status,
+      'status': status.value,
       'parent_task_id': parentTaskId,
       'project_id': projectId,
       'task_type_id': tasktypeId,
@@ -181,10 +203,8 @@ class TaskModel {
   @override
   String toString() {
     return 'TaskModel(id: $id, taskId: $taskId, taskName: $taskName, '
-        'priority: $priority, status: $status, '
+        'status: $status, priority: $priority, '
         'startDate: $startDate, endDate: $endDate, '
-        'projectId: $projectId, tasktypeId: $tasktypeId, '
-        'assignedTo: ${assignedTo.join(', ')}, '
-        'attachments: ${attachments.length} file(s))';
+        'assignedTo: ${assignedTo.join(', ')})';
   }
 }
