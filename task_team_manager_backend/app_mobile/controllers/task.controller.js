@@ -84,39 +84,239 @@ exports.findTaskByEmployee = async (req, res, next) => {
 };
 
 exports.update = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0) {
+  if (
+    Object.keys(req.body).length === 0 &&
+    (!req.files || req.files.length === 0)
+  ) {
     return next(new ApiError(400, "Data to update cannot be empty"));
   }
 
   try {
     const taskService = new TaskService(MongoDB.client);
-    const updated = await taskService.update(req.params.id, req.body);
+
+    const employeeId =
+      req.employee?.employee_id || req.body.employee_id || "unknown";
+
+    let updated = await taskService.update(req.params.id, req.body);
+
+    if (req.files && req.files.length > 0) {
+      updated = await taskService.addAttachments(
+        req.params.id,
+        req.files,
+        employeeId
+      );
+    }
+
     if (!updated) {
       return next(new ApiError(404, "Task not found"));
     }
-    res.json(updated);
+
+    res.json({
+      message: "Task updated successfully",
+      data: updated,
+    });
   } catch (error) {
     return next(new ApiError(500, "Error updating task: " + error.message));
   }
 };
 
 exports.updateByTaskId = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0) {
+  if (
+    Object.keys(req.body).length === 0 &&
+    (!req.files || req.files.length === 0)
+  ) {
     return next(new ApiError(400, "Data to update cannot be empty"));
   }
 
   try {
     const taskService = new TaskService(MongoDB.client);
-    const updated = await taskService.updateByTaskId(
-      req.params.task_id,
-      req.body
-    );
+
+    const employeeId =
+      req.employee?.employee_id || req.body.employee_id || "unknown";
+
+    let updated = null;
+
+    // Cập nhật thông tin task nếu có dữ liệu trong body
+    if (Object.keys(req.body).length > 0) {
+      updated = await taskService.updateByTaskId(req.params.task_id, req.body);
+    }
+
+    // Thêm attachments nếu có files
+    if (req.files && req.files.length > 0) {
+      updated = await taskService.addAttachmentsByTaskId(
+        req.params.task_id,
+        req.files,
+        employeeId
+      );
+    }
+
+    // Nếu chỉ có files mà không có body, lấy task hiện tại
+    if (!updated) {
+      updated = await taskService.findByTaskId(req.params.task_id);
+    }
+
     if (!updated) {
       return next(new ApiError(404, "Task not found"));
     }
-    res.json(updated);
+
+    res.json({
+      message: "Task updated successfully",
+      data: updated,
+    });
   } catch (error) {
     return next(new ApiError(500, "Error updating task: " + error.message));
+  }
+};
+
+exports.addAttachments = async (req, res, next) => {
+  if (!req.files || req.files.length === 0) {
+    return next(new ApiError(400, "No files uploaded"));
+  }
+
+  try {
+    const taskService = new TaskService(MongoDB.client);
+    const employeeId =
+      req.employee?.employee_id || req.body.uploadedBy || "unknown";
+    const updatedTask = await taskService.addAttachments(
+      req.params.id,
+      req.files,
+      employeeId
+    );
+
+    if (!updatedTask) {
+      return next(new ApiError(404, "Task not found"));
+    }
+
+    res.json({
+      message: "Attachments added successfully",
+      data: updatedTask,
+    });
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error adding attachments: " + error.message)
+    );
+  }
+};
+
+exports.addAttachmentsByTaskId = async (req, res, next) => {
+  if (!req.files || req.files.length === 0) {
+    return next(new ApiError(400, "No files uploaded"));
+  }
+
+  try {
+    const taskService = new TaskService(MongoDB.client);
+    const employeeId =
+      req.employee?.employee_id || req.body.uploadedBy || "unknown";
+    const updatedTask = await taskService.addAttachmentsByTaskId(
+      req.params.task_id,
+      req.files,
+      employeeId
+    );
+
+    if (!updatedTask) {
+      return next(new ApiError(404, "Task not found"));
+    }
+
+    res.json({
+      message: "Attachments added successfully",
+      data: updatedTask,
+    });
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error adding attachments: " + error.message)
+    );
+  }
+};
+
+exports.removeAttachment = async (req, res, next) => {
+  try {
+    const taskService = new TaskService(MongoDB.client);
+    const { task_id, attachment_id } = req.params;
+
+    const task = await taskService.findByTaskId(task_id);
+    if (!task) {
+      return next(new ApiError(404, "Task not found"));
+    }
+
+    const attachmentExists = task.attachments?.some(
+      (att) => att.attachment_id === attachment_id
+    );
+
+    if (!attachmentExists) {
+      return next(new ApiError(404, "Attachment not found or already deleted"));
+    }
+
+    const updatedTask = await taskService.removeAttachment(
+      task_id,
+      attachment_id
+    );
+
+    res.json({
+      message: "Attachment removed successfully",
+      data: updatedTask,
+    });
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error removing attachment: " + error.message)
+    );
+  }
+};
+
+exports.removeMultipleAttachments = async (req, res, next) => {
+  try {
+    const taskService = new TaskService(MongoDB.client);
+    const { task_id } = req.params;
+    const { attachment_ids } = req.body;
+
+    if (
+      !attachment_ids ||
+      !Array.isArray(attachment_ids) ||
+      attachment_ids.length === 0
+    ) {
+      return next(
+        new ApiError(400, "attachment_ids must be a non-empty array")
+      );
+    }
+
+    const task = await taskService.findByTaskId(task_id);
+    if (!task) {
+      return next(new ApiError(404, "Task not found"));
+    }
+
+    const existingAttachmentIds =
+      task.attachments?.map((att) => att.attachment_id) || [];
+    const invalidIds = attachment_ids.filter(
+      (id) => !existingAttachmentIds.includes(id)
+    );
+
+    if (invalidIds.length > 0) {
+      return next(
+        new ApiError(
+          404,
+          `Attachments not found or already deleted: ${invalidIds.join(", ")}`
+        )
+      );
+    }
+
+    const updatedTask = await taskService.removeMultipleAttachments(
+      task_id,
+      attachment_ids
+    );
+
+    if (!updatedTask) {
+      return next(new ApiError(500, "Failed to remove attachments"));
+    }
+
+    res.json({
+      message: "Attachments removed successfully",
+      removed_count: attachment_ids.length,
+      removed_ids: attachment_ids,
+      data: updatedTask,
+    });
+  } catch (error) {
+    return next(
+      new ApiError(500, "Error removing attachments: " + error.message)
+    );
   }
 };
 
