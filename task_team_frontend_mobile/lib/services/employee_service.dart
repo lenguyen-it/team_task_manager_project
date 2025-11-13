@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -16,7 +19,7 @@ class EmployeeService {
       );
 
       print('GET ALL EMPLOYEES - Status: ${response.statusCode}');
-      print('Response body: \\n${response.body}');
+      print('Response body: \n${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body) as List;
@@ -52,25 +55,79 @@ class EmployeeService {
     }
   }
 
-  Future<EmployeeModel> createEmployee(
-      EmployeeModel employee, String token) async {
+  Future<EmployeeModel> createEmployee(EmployeeModel employee, String token,
+      {File? imageFile}) async {
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.createEmployee),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(employee.toJson()),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return EmployeeModel.fromJson(
-          json.decode(response.body),
+      // Nếu có file ảnh, dùng multipart request
+      if (imageFile != null) {
+        var request = http.MultipartRequest(
+          'POST',
+          Uri.parse(ApiConfig.createEmployee),
         );
+
+        request.headers['Authorization'] = 'Bearer $token';
+
+        // Thêm các field dữ liệu
+        request.fields['employee_id'] = employee.employeeId;
+        request.fields['employee_name'] = employee.employeeName;
+        request.fields['phone'] = employee.phone;
+        request.fields['email'] = employee.email;
+        request.fields['role_id'] = employee.roleId;
+
+        if (employee.address != null) {
+          request.fields['address'] = employee.address!;
+        }
+
+        if (employee.birth != null) {
+          request.fields['birth'] = employee.birth!.toIso8601String();
+        }
+
+        var stream = http.ByteStream(imageFile.openRead());
+        var length = await imageFile.length();
+
+        final mimeType =
+            lookupMimeType(imageFile.path) ?? 'application/octet-stream';
+
+        var multipartFile = http.MultipartFile(
+          'avatar',
+          stream,
+          length,
+          filename: imageFile.path.split('/').last,
+          contentType: MediaType.parse(mimeType),
+        );
+        request.files.add(multipartFile);
+
+        print('Creating employee with image: ${imageFile.path}');
+
+        var streamedResponse = await request.send();
+        var response = await http.Response.fromStream(streamedResponse);
+
+        print('CREATE EMPLOYEE WITH IMAGE - Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return EmployeeModel.fromJson(json.decode(response.body));
+        } else {
+          final error = json.decode(response.body);
+          throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+        }
       } else {
-        final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+        // Không có file ảnh, dùng JSON request
+        final response = await http.post(
+          Uri.parse(ApiConfig.createEmployee),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(employee.toJson()),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return EmployeeModel.fromJson(json.decode(response.body));
+        } else {
+          final error = json.decode(response.body);
+          throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+        }
       }
     } catch (e) {
       throw Exception('Lỗi tạo nhân viên: $e');
@@ -78,24 +135,77 @@ class EmployeeService {
   }
 
   Future<EmployeeModel> updateEmployee(
-      String employeeId, EmployeeModel employee, String token) async {
+      String employeeId, EmployeeModel employee, String token,
+      {File? imageFile}) async {
     try {
-      final response = await http.put(
-        Uri.parse(
-          ApiConfig.updateEmployee(employeeId),
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(employee.toJson()),
-      );
+      if (imageFile != null) {
+        var request = http.MultipartRequest(
+          'PUT',
+          Uri.parse(ApiConfig.updateEmployee(employeeId)),
+        );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return EmployeeModel.fromJson(json.decode(response.body));
+        request.headers['Authorization'] = 'Bearer $token';
+
+        request.fields['employee_id'] = employee.employeeId;
+        request.fields['employee_name'] = employee.employeeName;
+        request.fields['phone'] = employee.phone;
+        request.fields['email'] = employee.email;
+        request.fields['role_id'] = employee.roleId;
+
+        if (employee.address != null) {
+          request.fields['address'] = employee.address!;
+        }
+
+        if (employee.birth != null) {
+          request.fields['birth'] = employee.birth!.toIso8601String();
+        }
+
+        var stream = http.ByteStream(imageFile.openRead());
+        var length = await imageFile.length();
+
+        final mimeType =
+            lookupMimeType(imageFile.path) ?? 'application/octet-stream';
+
+        var multipartFile = http.MultipartFile(
+          'avatar',
+          stream,
+          length,
+          filename: imageFile.path.split('/').last,
+          contentType: MediaType.parse(mimeType),
+        );
+
+        request.files.add(multipartFile);
+
+        print('Uploading image: ${imageFile.path}');
+
+        var streamedResponse = await request.send();
+        var response = await http.Response.fromStream(streamedResponse);
+
+        print('UPDATE EMPLOYEE WITH IMAGE - Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return EmployeeModel.fromJson(json.decode(response.body));
+        } else {
+          final error = json.decode(response.body);
+          throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        }
       } else {
-        final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        final response = await http.put(
+          Uri.parse(ApiConfig.updateEmployee(employeeId)),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(employee.toJson()),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return EmployeeModel.fromJson(json.decode(response.body));
+        } else {
+          final error = json.decode(response.body);
+          throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        }
       }
     } catch (e) {
       throw Exception('Lỗi cập nhật nhân viên: $e');
