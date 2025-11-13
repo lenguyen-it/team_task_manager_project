@@ -12,7 +12,7 @@ exports.create = async (req, res, next) => {
 
   try {
     const employeeService = new EmployeeService(MongoDB.client);
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    const image = req.file ? `/uploads/images/${req.file.filename}` : null;
     const employee = await employeeService.create(req.body, image);
 
     res.status(201).json(employee);
@@ -94,7 +94,7 @@ exports.update = async (req, res, next) => {
   try {
     const employeeService = new EmployeeService(MongoDB.client);
     const image = req.file
-      ? `/uploads/${req.file.filename}`
+      ? `/uploads/images/${req.file.filename}`
       : req.body.image || null;
 
     const updated = await employeeService.update(
@@ -114,11 +114,17 @@ exports.update = async (req, res, next) => {
 };
 
 exports.updateByEmployeeId = async (req, res, next) => {
+  console.log("req.body:", req.body);
+  console.log("req.file:", req.file);
+
   try {
     const employeeService = new EmployeeService(MongoDB.client);
+
     const image = req.file
-      ? `/uploads/${req.file.filename}`
+      ? `/uploads/images/${req.file.filename}`
       : req.body.image || null;
+
+    console.log("Image path to save:", image);
 
     const updated = await employeeService.updateByEmployeeId(
       req.params.employee_id,
@@ -130,6 +136,7 @@ exports.updateByEmployeeId = async (req, res, next) => {
       return next(new ApiError(404, "Employee not found"));
     }
 
+    console.log("Updated employee:", updated);
     res.json(updated);
   } catch (error) {
     return next(new ApiError(500, "Error updating employee: " + error.message));

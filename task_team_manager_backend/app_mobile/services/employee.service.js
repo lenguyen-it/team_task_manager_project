@@ -1,6 +1,4 @@
 const { ObjectId } = require("mongodb");
-const multer = require("multer");
-const path = require("path");
 const bcrypt = require("bcrypt");
 
 class EmployeeService {
@@ -8,18 +6,7 @@ class EmployeeService {
     this.Employee = client.db().collection("employees");
   }
 
-  static ImageStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "./uploads");
-    },
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}${path.extname(file.originalname)}`);
-    },
-  });
-
-  static uploadImage = multer({ storage: EmployeeService.ImageStorage });
-
-  extractEmployeeData(payload) {
+  extractEmployeeData(payload, image) {
     const employee = {
       employee_id: payload.employee_id,
       employee_name: payload.employee_name,
@@ -29,7 +16,7 @@ class EmployeeService {
       phone: payload.phone,
       birth: payload.birth,
       address: payload.address,
-      image: payload.image,
+      image: image || payload.image, 
     };
 
     Object.keys(employee).forEach(
@@ -46,7 +33,9 @@ class EmployeeService {
       employee.employee_password,
       12
     );
-    return await this.Employee.insertOne(employee);
+
+    const result = await this.Employee.insertOne(employee);
+    return { ...employee, _id: result.insertedId };
   }
 
   async find(filter) {
@@ -65,7 +54,7 @@ class EmployeeService {
 
   async findByEmployeeId(employee_id) {
     return await this.Employee.findOne({
-      employee_id: { $regex: `^${employee_id}$`, $options: "i" },
+      employee_id: employee_id,
     });
   }
 
@@ -83,6 +72,7 @@ class EmployeeService {
       throw new Error("Employee not found");
     }
 
+    // Xử lý password
     if (
       payload.employee_password &&
       payload.employee_password !== existingEmployee.employee_password
@@ -95,11 +85,14 @@ class EmployeeService {
       payload.employee_password = existingEmployee.employee_password;
     }
 
-    if (!payload.image && existingEmployee.image) {
+    // Xử lý image
+    if (image) {
+      payload.image = image;
+    } else if (!payload.image && existingEmployee.image) {
       payload.image = existingEmployee.image;
     }
 
-    const update = this.extractEmployeeData(payload, image);
+    const update = this.extractEmployeeData(payload);
 
     return await this.Employee.findOneAndUpdate(
       filter,
@@ -116,7 +109,11 @@ class EmployeeService {
       throw new Error("Employee not found");
     }
 
-    if (payload.employee_password) {
+    // Xử lý password
+    if (
+      payload.employee_password &&
+      payload.employee_password !== existingEmployee.employee_password
+    ) {
       payload.employee_password = await bcrypt.hash(
         payload.employee_password,
         12
@@ -125,17 +122,23 @@ class EmployeeService {
       payload.employee_password = existingEmployee.employee_password;
     }
 
-    if (!payload.image && existingEmployee.image) {
+    // Xử lý image
+    if (image) {
+      payload.image = image;
+    } else if (!payload.image && existingEmployee.image) {
       payload.image = existingEmployee.image;
     }
 
-    const update = this.extractEmployeeData(payload, image);
+    console.log("Final payload before update:", payload);
+
+    const update = this.extractEmployeeData(payload);
 
     const result = await this.Employee.findOneAndUpdate(
       filter,
       { $set: update },
       { returnDocument: "after" }
     );
+
     return result;
   }
 
@@ -154,8 +157,9 @@ class EmployeeService {
   }
 
   async deleteAll() {
-    return (await this.Employee.deleteMany({})).deleteCount;
+    const result = await this.Employee.deleteMany({});
+    return result.deletedCount;
   }
 }
 
-module.exports = { EmployeeService, uploadImage: EmployeeService.uploadImage };
+module.exports = { EmployeeService };

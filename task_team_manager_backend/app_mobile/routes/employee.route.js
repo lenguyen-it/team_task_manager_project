@@ -1,11 +1,8 @@
 const express = require("express");
-const EmployeeController = require("../controllers/employee.controller");
-const {
-  EmployeeService,
-  uploadImage,
-} = require("../services/employee.service");
 
+const EmployeeController = require("../controllers/employee.controller");
 const { verifyToken, authorize } = require("../middlewares/auth.middleware");
+const { uploadAvatar } = require("../middlewares/upload.middleware");
 
 const router = express.Router();
 
@@ -15,7 +12,7 @@ router
   .post(
     verifyToken,
     authorize(["admin", "manager"]),
-    EmployeeService.uploadImage.single("image"),
+    uploadAvatar,
     EmployeeController.create
   )
   .delete(
@@ -27,21 +24,13 @@ router
 router
   .route("/:employee_id")
   .get(verifyToken, EmployeeController.findByEmployeeId)
-  .put(
-    verifyToken,
-    EmployeeService.uploadImage.single("image"),
-    EmployeeController.updateByEmployeeId
-  )
+  .put(verifyToken, uploadAvatar, EmployeeController.updateByEmployeeId)
   .delete(verifyToken, EmployeeController.deleteByEmployeeId);
 
 router
   .route("/:id")
   .get(verifyToken, EmployeeController.findOne)
-  .put(
-    verifyToken,
-    EmployeeService.uploadImage.single("image"),
-    EmployeeController.update
-  )
+  .put(verifyToken, uploadAvatar, EmployeeController.update)
   .delete(verifyToken, EmployeeController.delete);
 
 module.exports = router;
