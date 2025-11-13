@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -8,14 +10,14 @@ import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/tasktype_provider.dart';
 
-class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+class AllTaskScreen extends StatefulWidget {
+  const AllTaskScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  State<AllTaskScreen> createState() => _AllTaskScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _AllTaskScreenState extends State<AllTaskScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _hasLoadedTasks = false;
@@ -25,6 +27,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   List<TaskModel> _searchResults = [];
   bool _isSearchMode = false;
+
+  Timer? _statusUpdateTimer;
 
   // Filter theo status
   String _selectedFilter = 'Tất cả';
@@ -42,11 +46,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.initState();
     _selectedDay = DateTime.now();
     Future.delayed(Duration.zero, _loadEmployeeTasks);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.updateAllTaskStatus();
+        print('Update status when app opened at: ${DateTime.now()}');
+      }
+    });
+
+    // Tự động cập nhật status mỗi ngày lúc 8h sáng và 17h chiều
+    _scheduleStatusUpdate();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _statusUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -61,16 +77,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
         auth.currentEmployee != null &&
         auth.token != null) {
       await Future.wait([
-        task.getTaskByEmployee(
-          auth.token!,
-          auth.currentEmployee!.employeeId,
-        ),
+        task.getTaskByEmployee(auth.token!, auth.currentEmployee!.employeeId),
         tasktype.getAllTaskType(token: auth.token!),
       ]);
+
       if (mounted) {
         setState(() => _hasLoadedTasks = true);
       }
     }
+  }
+
+  void _scheduleStatusUpdate() {
+    _statusUpdateTimer?.cancel();
+
+    final now = DateTime.now();
+    DateTime nextUpdate;
+
+    if (now.hour < 8) {
+      nextUpdate = DateTime(now.year, now.month, now.day, 8, 0, 0);
+    } else if (now.hour < 17) {
+      nextUpdate = DateTime(now.year, now.month, now.day, 17, 0, 0);
+    } else {
+      nextUpdate = DateTime(now.year, now.month, now.day + 1, 8, 0, 0);
+    }
+
+    final duration = nextUpdate.difference(now);
+
+    _statusUpdateTimer = Timer(duration, () {
+      if (mounted) {
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.updateAllTaskStatus();
+        print('Auto update status at: ${DateTime.now()}');
+
+        _scheduleStatusUpdate();
+      }
+    });
+
+    print('Next status update scheduled at: $nextUpdate');
   }
 
   String _getTaskTypeName(String tasktypeId) {
@@ -79,56 +122,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return tasktypeProvider.getTasktypeNameById(tasktypeId) ?? 'Không xác định';
   }
 
-  // Lọc danh sách
-  List<TaskModel> _getFilteredTasks(List<TaskModel> allTasks) {
-    if (_selectedFilter == 'Tất cả') return allTasks;
+  // Lọc danh sách theo filter và search
+  List<TaskModel> _getDisplayTasks(List<TaskModel> allTasks) {
+    var tasks = _isSearchMode ? _searchResults : allTasks;
 
-    final filterStatus = _statusViToEn(_selectedFilter);
-    return allTasks
-        .where((t) => t.status.toLowerCase() == filterStatus.toLowerCase())
-        .toList();
+    if (_selectedFilter == 'Tất cả') return tasks;
+
+    final targetStatus = _statusViToEnum(_selectedFilter);
+    return tasks.where((t) => t.status == targetStatus).toList();
   }
 
-  String _statusViToEn(String vi) {
-    switch (vi) {
-      case 'Công việc mới':
-        return 'new_task';
-      case 'Đang làm':
-        return 'in_progress';
-      case 'Chờ xác nhận':
-        return 'wait';
-      case 'Hoàn thành':
-        return 'done';
-      case 'Quá hạn':
-        return 'overdue';
-      default:
-        return vi;
-    }
+  TaskStatus _statusViToEnum(String vi) {
+    return switch (vi) {
+      'Công việc mới' => TaskStatus.newTask,
+      'Đang làm' => TaskStatus.inProgress,
+      'Chờ xác nhận' => TaskStatus.wait,
+      'Hoàn thành' => TaskStatus.done,
+      'Quá hạn' => TaskStatus.overdue,
+      _ => TaskStatus.newTask,
+    };
   }
 
-  // ĐẾM SỐ LƯỢNG THEO TRẠNG THÁI (dùng cho stats)
-  int _countTasksByStatus(List<TaskModel> tasks, String statusEn) {
-    return tasks
-        .where((t) => t.status.toLowerCase() == statusEn.toLowerCase())
-        .length;
+  // ĐẾM SỐ LƯỢNG THEO TRẠNG THÁI
+  int _countTasksByStatus(List<TaskModel> tasks, TaskStatus status) {
+    return tasks.where((t) => t.status == status).length;
   }
 
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
-    final statsTasks = taskProvider.tasks;
+    if (!authProvider.isAuthenticated || authProvider.currentEmployee == null) {
+      return const Scaffold(body: Center(child: Text('Vui lòng đăng nhập')));
+    }
 
-    final displayTasks = _getFilteredTasks(
-      _isSearchMode ? _searchResults : taskProvider.tasks,
-    );
+    final allTasks = taskProvider.tasks;
 
-    final total = statsTasks.length;
-    final newTasks = _countTasksByStatus(statsTasks, 'new_task');
-    final inProgress = _countTasksByStatus(statsTasks, 'in_progress');
-    final wait = _countTasksByStatus(statsTasks, 'wait');
-    final done = _countTasksByStatus(statsTasks, 'done');
-    final overdue = _countTasksByStatus(statsTasks, 'overdue');
+    final displayTasks = _getDisplayTasks(allTasks);
+
+    final total = allTasks.length;
+    final newTasks = _countTasksByStatus(allTasks, TaskStatus.newTask);
+    final inProgress = _countTasksByStatus(allTasks, TaskStatus.inProgress);
+    final wait = _countTasksByStatus(allTasks, TaskStatus.wait);
+    final done = _countTasksByStatus(allTasks, TaskStatus.done);
+    final overdue = _countTasksByStatus(allTasks, TaskStatus.overdue);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -139,10 +177,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         title: const Text(
           'Công việc',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+              color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -162,17 +197,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
               _buildCalendar(taskProvider),
               const SizedBox(height: 24),
 
-              // Thống kê số lượng
+              // Thống kê
               _buildStatsSection(
                   total, newTasks, inProgress, wait, done, overdue),
-
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
 
               // Header + Search
               _buildHeader(taskProvider),
+              const SizedBox(height: 8),
 
               // Filter Chips
               _buildFilterChips(),
+
+              const SizedBox(height: 16),
 
               // Danh sách công việc
               _buildTaskList(displayTasks, taskProvider),
@@ -222,10 +259,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -233,10 +267,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Text(
             '$count công việc',
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+                fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
           ),
         ],
       ),
@@ -263,18 +294,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
         onPageChanged: (focusedDay) => setState(() => _focusedDay = focusedDay),
         eventLoader: (day) {
           final checkDay = DateTime(day.year, day.month, day.day);
-          final hasTasks = taskProvider.tasks.any((task) {
+          final hasTask = taskProvider.tasks.any((task) {
             final start = DateTime(
                 task.startDate.year, task.startDate.month, task.startDate.day);
             final end = task.endDate != null
                 ? DateTime(
                     task.endDate!.year, task.endDate!.month, task.endDate!.day)
                 : start;
-            return (checkDay.isAtSameMomentAs(start) ||
-                    checkDay.isAfter(start)) &&
-                (checkDay.isAtSameMomentAs(end) || checkDay.isBefore(end));
+            return checkDay.isAtSameMomentAs(start) ||
+                (checkDay.isAfter(start) && checkDay.isBefore(end)) ||
+                checkDay.isAtSameMomentAs(end);
           });
-          return hasTasks ? [1] : [];
+          return hasTask ? [1] : [];
         },
         headerStyle: const HeaderStyle(
           formatButtonVisible: false,
@@ -285,7 +316,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           selectedDecoration:
               const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
           todayDecoration:
-              BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+              const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
           markerDecoration:
               const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
           markerSize: 6,
@@ -316,7 +347,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             _isSearching = false;
                             _isSearchMode = false;
                             _searchController.clear();
-                            _searchResults = [];
+                            _searchResults.clear();
                           });
                         },
                       ),
@@ -326,17 +357,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           horizontal: 12, vertical: 8),
                     ),
                     onChanged: (value) {
-                      if (value.isEmpty) {
+                      if (value.trim().isEmpty) {
                         setState(() {
                           _isSearchMode = false;
-                          _searchResults = [];
+                          _searchResults.clear();
                         });
                       } else {
-                        final results = provider.tasks.where((t) {
-                          return t.taskName
-                              .toLowerCase()
-                              .contains(value.toLowerCase());
-                        }).toList();
+                        final results = provider.tasks
+                            .where((t) => t.taskName
+                                .toLowerCase()
+                                .contains(value.toLowerCase()))
+                            .toList();
                         setState(() {
                           _isSearchMode = true;
                           _searchResults = results;
@@ -369,27 +400,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         itemBuilder: (context, index) {
           final option = _filterOptions[index];
           final isSelected = _selectedFilter == option;
-
-          Color chipColor;
-          switch (option) {
-            case 'Công việc mới':
-              chipColor = Colors.cyan;
-              break;
-            case 'Đang làm':
-              chipColor = Colors.yellow.shade700;
-              break;
-            case 'Chờ xác nhận':
-              chipColor = Colors.grey.shade500;
-              break;
-            case 'Hoàn thành':
-              chipColor = Colors.green;
-              break;
-            case 'Quá hạn':
-              chipColor = Colors.red;
-              break;
-            default:
-              chipColor = Colors.blue;
-          }
+          final statusEnum = _statusViToEnum(option);
+          final chipColor = _getStatusColor(statusEnum);
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -431,7 +443,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    if (provider.isLoading && provider.tasks.isEmpty && !_hasLoadedTasks) {
+    if (provider.isLoading && !_hasLoadedTasks) {
       return const Padding(
         padding: EdgeInsets.all(32),
         child: Center(child: CircularProgressIndicator()),
@@ -463,195 +475,149 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildTaskCard(TaskModel task) {
     final color = _getStatusColor(task.status);
-    final statusVi = _statusEnToVi(task.status);
-    final priorityVi = _priorityEnToVi(task.priority);
+    final statusVi = _statusEnumToVi(task.status);
+    final priorityVi = _priorityEnumToVi(task.priority);
     final priorityColor = _getPriorityColor(task.priority);
     final dateRange = _formatDateRange(task.startDate, task.endDate);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        // Thay Container bằng InkWell để có hiệu ứng nhấn
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailTaskScreen(task: task),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => DetailTaskScreen(task: task)),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.taskName,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _getTaskTypeName(task.tasktypeId),
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        statusVi,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today,
+                        size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 6),
+                    Text(dateRange,
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade700)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text('Độ ưu tiên: ',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade700)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        priorityVi,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: priorityColor,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade100,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          task.taskName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _getTaskTypeName(task.tasktypeId),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      statusVi,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.calendar_today,
-                      size: 14, color: Colors.grey.shade600),
-                  const SizedBox(width: 6),
-                  Text(
-                    dateRange,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    'Độ ưu tiên: ',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: priorityColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      priorityVi,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: priorityColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ),
         ),
       ),
     );
   }
 
-  // Hiển thị: backend → UI
-  String _statusEnToVi(String status) {
-    switch (status.toLowerCase()) {
-      case 'new_task':
-        return 'Công việc mới';
-      case 'in_progress':
-        return 'Đang làm';
-      case 'wait':
-        return 'Chờ xác nhận';
-      case 'done':
-        return 'Hoàn thành';
-      case 'overdue':
-        return 'Quá hạn';
-      default:
-        return status;
-    }
+  // --- Helper Methods ---
+  String _statusEnumToVi(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.newTask => 'Công việc mới',
+      TaskStatus.inProgress => 'Đang làm',
+      TaskStatus.wait => 'Chờ xác nhận',
+      TaskStatus.done => 'Hoàn thành',
+      TaskStatus.overdue => 'Quá hạn',
+      TaskStatus.pause => 'Tạm dừng',
+    };
   }
 
-  String _priorityEnToVi(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return 'Cao';
-      case 'normal':
-        return 'Trung bình';
-      case 'low':
-        return 'Thấp';
-      default:
-        return priority;
-    }
+  String _priorityEnumToVi(String priority) {
+    return switch (priority.toLowerCase()) {
+      'high' => 'Cao',
+      'normal' => 'Trung bình',
+      'low' => 'Thấp',
+      _ => priority,
+    };
   }
 
   Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return Colors.red;
-      case 'normal':
-        return Colors.orange;
-      case 'low':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+    return switch (priority.toLowerCase()) {
+      'high' => Colors.red,
+      'normal' => Colors.orange,
+      'low' => Colors.green,
+      _ => Colors.grey,
+    };
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'done':
-      case 'hoàn thành':
-        return Colors.green;
-      case 'in_progress':
-      case 'đang làm':
-        return Colors.yellow.shade700;
-      case 'wait':
-      case 'chờ xác nhận':
-        return Colors.grey.shade500;
-      case 'new_task':
-      case 'công việc mới':
-        return Colors.cyan;
-      case 'pause':
-      case 'tạm dừng':
-        return Colors.redAccent;
-      case 'overdue':
-      case 'quá hạn':
-        return Colors.red;
-      default:
-        return Colors.blue;
-    }
+  Color _getStatusColor(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.done => Colors.green,
+      TaskStatus.inProgress => Colors.orange,
+      TaskStatus.wait => Colors.grey.shade500,
+      TaskStatus.newTask => Colors.cyan,
+      TaskStatus.pause => Colors.redAccent,
+      TaskStatus.overdue => Colors.red,
+      _ => Colors.blue,
+    };
   }
 
   String _formatDateRange(DateTime start, DateTime? end) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -28,6 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<TaskModel> _searchResults = [];
   bool _isSearchMode = false;
 
+  Timer? _statusUpdateTimer;
+
   // Filter theo status
   String _selectedFilter = 'Tất cả';
   final List<String> _filterOptions = [
@@ -44,6 +48,23 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _selectedDay = DateTime.now();
     Future.delayed(Duration.zero, _loadEmployeeTasks);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.updateAllTaskStatus();
+        print('Update status when app opened at: ${DateTime.now()}');
+      }
+    });
+
+    _scheduleStatusUpdate();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _statusUpdateTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadEmployeeTasks() async {
@@ -70,6 +91,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _scheduleStatusUpdate() {
+    _statusUpdateTimer?.cancel();
+
+    final now = DateTime.now();
+    DateTime nextUpdate;
+
+    if (now.hour < 8) {
+      nextUpdate = DateTime(now.year, now.month, now.day, 8, 0, 0);
+    } else if (now.hour < 17) {
+      nextUpdate = DateTime(now.year, now.month, now.day, 17, 0, 0);
+    } else {
+      nextUpdate = DateTime(now.year, now.month, now.day + 1, 8, 0, 0);
+    }
+
+    final duration = nextUpdate.difference(now);
+
+    _statusUpdateTimer = Timer(duration, () {
+      if (mounted) {
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.updateAllTaskStatus();
+        print('Auto update status at: ${DateTime.now()}');
+
+        _scheduleStatusUpdate();
+      }
+    });
+
+    print('Next status update scheduled at: $nextUpdate');
+  }
+
   String _getTaskTypeName(String tasktypeId) {
     final tasktypeProvider =
         Provider.of<TasktypeProvider>(context, listen: false);
@@ -79,10 +129,19 @@ class _HomeScreenState extends State<HomeScreen> {
   List<TaskModel> _applyFilter(List<TaskModel> source) {
     if (_selectedFilter == 'Tất cả') return source;
 
-    final targetStatus = _statusViToEn(_selectedFilter);
-    return source
-        .where((t) => t.status.toLowerCase() == targetStatus.toLowerCase())
-        .toList();
+    final targetStatus = _statusViToEnum(_selectedFilter);
+    return source.where((t) => t.status == targetStatus).toList();
+  }
+
+  TaskStatus _statusViToEnum(String vi) {
+    return switch (vi) {
+      'Công việc mới' => TaskStatus.newTask,
+      'Đang làm' => TaskStatus.inProgress,
+      'Chờ xác nhận' => TaskStatus.wait,
+      'Hoàn thành' => TaskStatus.done,
+      'Quá hạn' => TaskStatus.overdue,
+      _ => TaskStatus.newTask,
+    };
   }
 
   String _statusViToEn(String vi) {
@@ -401,26 +460,8 @@ class _HomeScreenState extends State<HomeScreen> {
           final option = _filterOptions[index];
           final selected = _selectedFilter == option;
 
-          Color chipColor;
-          switch (option) {
-            case 'Công việc mới':
-              chipColor = Colors.cyan;
-              break;
-            case 'Đang làm':
-              chipColor = Colors.yellow.shade700;
-              break;
-            case 'Chờ xác nhận':
-              chipColor = Colors.grey.shade500;
-              break;
-            case 'Hoàn thành':
-              chipColor = Colors.green;
-              break;
-            case 'Quá hạn':
-              chipColor = Colors.red;
-              break;
-            default:
-              chipColor = Colors.blue;
-          }
+          final statusEnum = _statusViToEnum(option);
+          final chipColor = _getStatusColor(statusEnum);
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -628,21 +669,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _statusEnToVi(String status) {
-    switch (status.toLowerCase()) {
-      case 'new_task':
-        return 'Công việc mới';
-      case 'in_progress':
-        return 'Đang làm';
-      case 'wait':
-        return 'Chờ xác nhận';
-      case 'done':
-        return 'Hoàn thành';
-      case 'overdue':
-        return 'Quá hạn';
-      default:
-        return status;
-    }
+  String _statusEnToVi(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.newTask => 'Công việc mới',
+      TaskStatus.inProgress => 'Đang làm',
+      TaskStatus.wait => 'Chờ xác nhận',
+      TaskStatus.done => 'Hoàn thành',
+      TaskStatus.overdue => 'Quá hạn',
+      TaskStatus.pause => 'Tạm dừng',
+    };
   }
 
   String _priorityEnToVi(String priority) {
@@ -671,29 +706,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'done':
-      case 'hoàn thành':
-        return Colors.green;
-      case 'in_progress':
-      case 'đang làm':
-        return Colors.orange;
-      case 'wait':
-      case 'chờ xác nhận':
-        return Colors.grey;
-      case 'new_task':
-      case 'công việc mới':
-        return Colors.cyan;
-      case 'pause':
-      case 'tạm dừng':
-        return Colors.redAccent;
-      case 'overdue':
-      case 'quá hạn':
-        return Colors.red;
-      default:
-        return Colors.blue;
-    }
+  Color _getStatusColor(TaskStatus status) {
+    return switch (status) {
+      TaskStatus.done => Colors.green,
+      TaskStatus.inProgress => Colors.orange,
+      TaskStatus.wait => Colors.grey,
+      TaskStatus.newTask => Colors.cyan,
+      TaskStatus.pause => Colors.redAccent,
+      TaskStatus.overdue => Colors.red,
+    };
   }
 
   String _formatDateRange(DateTime start, DateTime? end) {
