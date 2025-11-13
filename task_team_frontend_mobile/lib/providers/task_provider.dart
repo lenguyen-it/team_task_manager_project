@@ -26,6 +26,8 @@ class TaskProvider with ChangeNotifier {
     try {
       final data = await _taskService.getAllTask(token);
       _tasks = data;
+      // Tự động cập nhật status sau khi load
+      updateAllTaskStatus();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -42,6 +44,8 @@ class TaskProvider with ChangeNotifier {
     try {
       final data = await _taskService.getTaskById(taskId, token);
       _tasks = [data];
+      // Tự động cập nhật status
+      updateAllTaskStatus();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -91,6 +95,8 @@ class TaskProvider with ChangeNotifier {
     try {
       final data = await _taskService.getTaskByEmployee(employeeId, token);
       _tasks = data;
+      // Tự động cập nhật status sau khi load
+      updateAllTaskStatus();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -108,6 +114,8 @@ class TaskProvider with ChangeNotifier {
     try {
       final data = await _taskService.getTaskByName(taskName, token);
       _tasks = data;
+      // Tự động cập nhật status
+      updateAllTaskStatus();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -278,6 +286,18 @@ class TaskProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  List<TaskModel> getTasksByStatus(TaskStatus status) {
+    return _tasks.where((t) => t.status == status).toList();
+  }
+
+  void updateAllTaskStatus() {
+    _tasks = _tasks.map((task) {
+      final updated = task.updateStatus();
+      return updated;
+    }).toList();
+    notifyListeners();
   }
 
   // Clear error
