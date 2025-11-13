@@ -2,19 +2,16 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Tạo thư mục uploads/files nếu chưa có
 const uploadFileDir = "uploads/files";
-if (!fs.existsSync(uploadFileDir)) {
-  fs.mkdirSync(uploadFileDir, { recursive: true });
-}
-
 const uploadImageDir = "uploads/images";
-if (!fs.existsSync(uploadImageDir)) {
-  fs.mkdirSync(uploadImageDir, { recursive: true });
-}
 
-// Cấu hình storage
-const storage = multer.diskStorage({
+[uploadFileDir, uploadImageDir].forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadFileDir);
   },
@@ -26,7 +23,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Giới hạn loại file và kích thước
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     "image/jpeg",
@@ -54,13 +50,23 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+const uploadFile = multer({
+  storage: fileStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter,
+});
+
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadImageDir);
   },
   filename: (req, file, cb) => {
     const employeeId =
-      req.employee?.employeeId || req.body.employeeId || "unknown";
+      req.body.employee_id ||
+      req.params.employee_id ||
+      req.employee?.employee_id ||
+      "unknown";
+
     const ext = path.extname(file.originalname).toLowerCase();
     const timestamp = Date.now();
 
@@ -86,20 +92,9 @@ const avatarFileFilter = (req, file, cb) => {
 
 const uploadAvatar = multer({
   storage: avatarStorage,
-  limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB
-  },
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: avatarFileFilter,
 }).single("avatar");
-
-// Cấu hình multer
-const uploadFile = multer({
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-  },
-  fileFilter: fileFilter,
-});
 
 module.exports = {
   uploadFile,
