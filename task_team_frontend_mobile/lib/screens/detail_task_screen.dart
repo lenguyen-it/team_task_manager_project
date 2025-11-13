@@ -30,6 +30,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
 
   // Controllers và state cho chỉnh sửa
   late TextEditingController _descriptionController;
+
   late String _selectedStatus;
 
   bool _isLoading = false;
@@ -53,7 +54,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
     _descriptionController = TextEditingController(
       text: widget.task.description ?? '',
     );
-    _selectedStatus = widget.task.status;
+    _selectedStatus = widget.task.status.value;
     _currentTask = widget.task;
     _loadData();
   }
@@ -188,7 +189,7 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
         // Reload task từ server
         await provider.getTaskById(widget.task.taskId, token);
         setState(() {
-          _currentTask = provider.tasks.first; // Cập nhật local state
+          _currentTask = provider.tasks.first;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
