@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:task_team_frontend_mobile/models/employee_model.dart';
 import 'package:task_team_frontend_mobile/services/employee_service.dart';
@@ -50,14 +52,18 @@ class EmployeeProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createEmployee(EmployeeModel employee, String token) async {
+  Future<bool> createEmployee(EmployeeModel employee, String token,
+      {File? imageFile}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final newEmployee =
-          await _employeeService.createEmployee(employee, token);
+      final newEmployee = await _employeeService.createEmployee(
+        employee,
+        token,
+        imageFile: imageFile,
+      );
       _employees.add(newEmployee);
       notifyListeners();
       return true;
@@ -65,27 +71,39 @@ class EmployeeProvider with ChangeNotifier {
       _error = e.toString();
       notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   Future<bool> updateEmployee(
-      String employeeId, EmployeeModel updateEmployee, String token) async {
+      String employeeId, EmployeeModel updateEmployee, String token,
+      {File? imageFile}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
       final employee = await _employeeService.updateEmployee(
-          employeeId, updateEmployee, token);
+        employeeId,
+        updateEmployee,
+        token,
+        imageFile: imageFile,
+      );
+
       final idx = _employees.indexWhere((e) => e.employeeId == employeeId);
       if (idx != -1) {
         _employees[idx] = employee;
-        notifyListeners();
       }
+
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -100,8 +118,10 @@ class EmployeeProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -112,17 +132,14 @@ class EmployeeProvider with ChangeNotifier {
 
     try {
       await _employeeService.deleteAllEmployee(token);
-
       _employees.clear();
-
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
-      _isLoading = false;
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
