@@ -44,6 +44,11 @@ dependencies:
   intl: ^0.20.2
   timeline_tile: ^2.0.0
   fl_chart: ^0.68.0
+  dropdown_button2: ^2.3.9
+  file_picker: ^10.3.6
+  mime: ^2.0.0
+  http_parser: ^4.1.2
+  image_picker: ^1.2.0
 
 dev_dependencies:
   flutter_test:
