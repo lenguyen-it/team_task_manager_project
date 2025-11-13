@@ -30,6 +30,11 @@ class ApiConfig {
     return '$getUrl/tasks/$taskId';
   }
 
+  //Chỉ cập nhật file
+  static String updateOnlyFileforTask(String taskId) {
+    return '$getUrl/tasks/$taskId/attachments';
+  }
+
   static String deleteTask(String taskId) {
     return '$getUrl/tasks/$taskId';
   }
