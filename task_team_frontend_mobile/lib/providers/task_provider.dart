@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:task_team_frontend_mobile/models/task_model.dart';
 import 'package:task_team_frontend_mobile/services/task_service.dart';
@@ -49,9 +50,8 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  // Hàm lọc theo ngày - FIXED: Logic chính xác
+  // Hàm lọc theo ngày
   List<TaskModel> getTaskByDate(DateTime selectedDate) {
-    // Chuẩn hóa ngày đã chọn (bỏ giờ phút giây)
     final selected = DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -59,14 +59,12 @@ class TaskProvider with ChangeNotifier {
     );
 
     return _tasks.where((task) {
-      // Chuẩn hóa ngày bắt đầu
       final start = DateTime(
         task.startDate.year,
         task.startDate.month,
         task.startDate.day,
       );
 
-      // Chuẩn hóa ngày kết thúc
       final end = task.endDate != null
           ? DateTime(
               task.endDate!.year,
@@ -75,7 +73,6 @@ class TaskProvider with ChangeNotifier {
             )
           : start;
 
-      // Kiểm tra: selected phải >= start VÀ selected phải <= end
       final isAfterOrSameStart =
           selected.isAtSameMomentAs(start) || selected.isAfter(start);
       final isBeforeOrSameEnd =
@@ -102,14 +99,19 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  //Search task theo tên
+  // Search task theo tên
   Future<void> getTaskByName(String token, String taskName) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       final data = await _taskService.getTaskByName(taskName, token);
       _tasks = data;
-      notifyListeners();
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -122,32 +124,123 @@ class TaskProvider with ChangeNotifier {
     try {
       final newTask = await _taskService.createTask(task, token);
       _tasks.add(newTask);
-      notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<bool> updateTask(
-      String taskId, TaskModel updateTask, String token) async {
+  // Cập nhật task (có thể kèm files hoặc không)
+  Future<bool> updateTask({
+    required String taskId,
+    required String token,
+    Map<String, dynamic>? taskData,
+    List<File>? files,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
-      final task = await _taskService.updateTask(taskId, updateTask, token);
-      final idx = _tasks.indexWhere((e) => e.taskId == taskId);
-      if (idx != -1) {
-        _tasks[idx] = task;
-        notifyListeners();
+      final response = await _taskService.updateTask(
+        taskId: taskId,
+        token: token,
+        taskData: taskData,
+        files: files,
+      );
+
+      // Parse response và cập nhật task trong list
+      if (response['data'] != null) {
+        final updatedTask = TaskModel.fromJson(response['data']);
+        final idx = _tasks.indexWhere((e) => e.taskId == taskId);
+        if (idx != -1) {
+          _tasks[idx] = updatedTask;
+        }
       }
+
       return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Chỉ upload files cho task (không cập nhật thông tin)
+  Future<bool> uploadFilesForTask({
+    required String taskId,
+    required String token,
+    required List<File> files,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _taskService.uploadFilesForTask(
+        taskId: taskId,
+        token: token,
+        files: files,
+      );
+
+      // Parse response và cập nhật task trong list
+      if (response['data'] != null) {
+        final updatedTask = TaskModel.fromJson(response['data']);
+        final idx = _tasks.indexWhere((e) => e.taskId == taskId);
+        if (idx != -1) {
+          _tasks[idx] = updatedTask;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Xóa một file attachment
+  Future<bool> deleteAttachment({
+    required String taskId,
+    required String attachmentId,
+    required String token,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _taskService.deleteAttachment(
+        taskId: taskId,
+        attachmentId: attachmentId,
+        token: token,
+      );
+
+      // Parse response và cập nhật task trong list
+      if (response['data'] != null) {
+        final updatedTask = TaskModel.fromJson(response['data']);
+        final idx = _tasks.indexWhere((e) => e.taskId == taskId);
+        if (idx != -1) {
+          _tasks[idx] = updatedTask;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -161,9 +254,11 @@ class TaskProvider with ChangeNotifier {
       _tasks.removeWhere((e) => e.taskId == taskId);
       return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -174,17 +269,14 @@ class TaskProvider with ChangeNotifier {
 
     try {
       await _taskService.deleteAllTask(token);
-
       _tasks.clear();
-
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
-      _isLoading = false;
-      _error = e.toString();
-      notifyListeners();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
