@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/models/employee_model.dart';
+
+import '../config/api_config.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String token;
@@ -26,6 +32,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _addressController;
   late TextEditingController _dobController;
 
+  late String _avatarUrl;
+  File? _avatarFile;
+
   bool _isLoading = false;
 
   @override
@@ -37,8 +46,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextEditingController(text: widget.employee.employeeName);
     _phoneController = TextEditingController(text: widget.employee.phone);
     _emailController = TextEditingController(text: widget.employee.email);
-    _addressController = TextEditingController(text: 'Cần Thơ'); // Placeholder
-    _dobController = TextEditingController(text: '20/08/2002'); // Placeholder
+    _addressController = TextEditingController(text: widget.employee.address);
+    _dobController = TextEditingController(
+      text: widget.employee.birth != null
+          ? DateFormat('dd/MM/yyyy').format(widget.employee.birth!)
+          : '',
+    );
+    _avatarUrl = _getFullImageUrl(widget.employee.image);
   }
 
   @override
@@ -50,6 +64,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _addressController.dispose();
     _dobController.dispose();
     super.dispose();
+  }
+
+  String _getFullImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return '';
+    final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    return '${ApiConfig.getUrl}/$path';
+  }
+
+  Future<void> _imagePicker() async {
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Chọn nguồn ảnh'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Thư viện'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: source,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _avatarFile = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _handleSave() async {
@@ -88,6 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         widget.employee.employeeId,
         updatedEmployee,
         widget.token,
+        imageFile: _avatarFile,
       );
 
       if (mounted) {
@@ -98,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate success
+          Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -207,40 +267,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       color: Colors.purple[100],
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.purple[300],
+                    child: ClipOval(
+                      // child: _avatarFile != null
+                      //     ? Image.file(
+                      //         _avatarFile!,
+                      //         fit: BoxFit.cover,
+                      //         width: 100,
+                      //         height: 100,
+                      //       )
+                      //     : (_avatarUrl.isNotEmpty
+                      //         ? Image.network(
+                      //             _avatarUrl,
+                      //             fit: BoxFit.cover,
+                      //             width: 100,
+                      //             height: 100,
+                      //             errorBuilder: (context, error, stackTrace) {
+                      //               return Icon(
+                      //                 Icons.person,
+                      //                 size: 50,
+                      //                 color: Colors.purple[300],
+                      //               );
+                      //             },
+                      //             loadingBuilder:
+                      //                 (context, child, loadingProgress) {
+                      //               if (loadingProgress == null) return child;
+                      //               return Center(
+                      //                 child: CircularProgressIndicator(
+                      //                   value: loadingProgress
+                      //                               .expectedTotalBytes !=
+                      //                           null
+                      //                       ? loadingProgress
+                      //                               .cumulativeBytesLoaded /
+                      //                           loadingProgress
+                      //                               .expectedTotalBytes!
+                      //                       : null,
+                      //                 ),
+                      //               );
+                      //             },
+                      //           )
+                      //         : Icon(
+                      //             Icons.person,
+                      //             size: 50,
+                      //             color: Colors.purple[300],
+                      //           )),
+                      child: _avatarFile != null
+                          ? Image.file(_avatarFile!, fit: BoxFit.cover)
+                          : (_avatarUrl.isNotEmpty
+                              ? Image.network(
+                                  _avatarUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: Colors.purple[300]),
+                                )
+                              : Icon(Icons.person,
+                                  size: 50, color: Colors.purple[300])),
                     ),
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.purple[300],
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 20,
-                        color: Colors.white,
+                    child: InkWell(
+                      onTap: _imagePicker,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.purple[300],
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 20,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chức năng đang phát triển')),
-                  );
-                },
-                child: const Text('Thay đổi ảnh đại diện'),
-              ),
+              // const SizedBox(height: 8),
+              // TextButton(
+              //   onPressed: _imagePicker,
+              //   child: Text(
+              //     _avatarFile != null
+              //         ? 'Ảnh đã chọn - Nhấn để thay đổi'
+              //         : 'Thay đổi ảnh đại diện',
+              //   ),
+              // ),
               const SizedBox(height: 24),
 
               // Employee ID (Read-only)

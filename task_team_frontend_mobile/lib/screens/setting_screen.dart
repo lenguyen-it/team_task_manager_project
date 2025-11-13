@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
 import 'package:task_team_frontend_mobile/screens/profile_screen.dart';
+import '../config/api_config.dart';
 import '../providers/auth_provider.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -12,6 +13,12 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
+  String _getFullImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return '';
+    final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    return '${ApiConfig.getUrl}/$path';
+  }
+
   Future<void> _handleLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -113,15 +120,52 @@ class _SettingScreenState extends State<SettingScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: const Color(0xFF5DADE2),
-                    child: Text(
-                      employee?.employeeName.substring(0, 1).toUpperCase() ??
-                          'U',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    backgroundColor: Colors.purple[100],
+                    child: ClipOval(
+                      child: employee?.image != null &&
+                              employee!.image!.isNotEmpty
+                          ? Image.network(
+                              _getFullImageUrl(employee.image),
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Text(
+                                  employee.employeeName.isNotEmpty
+                                      ? employee.employeeName[0].toUpperCase()
+                                      : '',
+                                  style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.purple),
+                                );
+                              },
+                            )
+                          : Text(
+                              employee?.employeeName.isNotEmpty == true
+                                  ? employee!.employeeName[0].toUpperCase()
+                                  : '',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -224,7 +268,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     },
                   ),
 
-                  // Nút đăng xuất nằm cuối danh sách
+                  // Nút đăng xuất
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -4,6 +4,8 @@ import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/models/employee_model.dart';
 import 'package:task_team_frontend_mobile/screens/edit_profile_screen.dart';
 
+import '../config/api_config.dart';
+
 class ProfileScreen extends StatefulWidget {
   final String token;
   final String employeeId;
@@ -25,12 +27,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadEmployeeData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEmployeeData();
+    });
   }
 
   Future<void> _loadEmployeeData() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     final provider = Provider.of<EmployeeProvider>(context, listen: false);
     await provider.getEmployeeById(widget.employeeId, widget.token);
+
+    if (!mounted) return;
 
     if (provider.employees.isNotEmpty) {
       setState(() {
@@ -42,6 +54,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  String _getFullImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      print('⚠️ Image path is null or empty');
+      return '';
+    }
+    final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    final fullUrl = '${ApiConfig.getUrl}/$path';
+
+    print('════════════════════════════════');
+    print('🖼️ IMAGE DEBUG:');
+    print('   Raw path: $imagePath');
+    print('   Processed path: $path');
+    print('   Base URL: ${ApiConfig.getUrl}');
+    print('   Full URL: $fullUrl');
+    print('════════════════════════════════');
+
+    return fullUrl;
   }
 
   @override
@@ -56,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'HỒ SƠ',
+          'Hồ Sơ',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -78,8 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 );
-                // Reload data if update was successful
-                if (result == true) {
+                if (result == true && mounted) {
                   _loadEmployeeData();
                 }
               }
@@ -103,10 +133,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.purple[100],
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.purple[300],
+                        child: ClipOval(
+                          child: _employee!.image != null &&
+                                  _employee!.image!.isNotEmpty
+                              ? Image.network(
+                                  _getFullImageUrl(_employee!.image),
+                                  fit: BoxFit.cover,
+                                  width: 100,
+                                  height: 100,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: Colors.purple[300],
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      print('✅ Image loaded successfully!');
+                                      return child;
+                                    }
+                                    print(
+                                        '⏳ Loading image... ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes}');
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.purple[300],
+                                ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -135,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Address (placeholder - not in model)
+                      // Address
                       _buildInfoField(
                         label: 'Địa chỉ:',
                         value: _employee!.address ?? 'Chưa cập nhật',
@@ -149,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Date of birth (placeholder - not in model)
+                      // Date of birth
                       _buildInfoField(
                         label: 'Ngày sinh:',
                         value: _employee!.birth != null
