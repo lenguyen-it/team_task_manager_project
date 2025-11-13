@@ -119,10 +119,10 @@ class ProjectService {
         return ProjectModel.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Cập nhật dự án thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi cập nhật nhân viên: $e');
+      throw Exception('Lỗi cập nhật dự án: $e');
     }
   }
 
