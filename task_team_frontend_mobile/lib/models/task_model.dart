@@ -1,20 +1,69 @@
+class Attachment {
+  final String? attachmentId;
+  final String fileName;
+  final String fileUrl;
+  final String? fileType;
+  final int? size;
+  final DateTime uploadedAt;
+  final String? uploadedBy;
+
+  Attachment({
+    this.attachmentId,
+    required this.fileName,
+    required this.fileUrl,
+    this.fileType,
+    this.size,
+    DateTime? uploadedAt,
+    this.uploadedBy,
+  }) : uploadedAt = uploadedAt ?? DateTime.now();
+
+  factory Attachment.fromJson(Map<String, dynamic> json) {
+    return Attachment(
+      attachmentId: json['attachment_id']?.toString() ?? '',
+      fileName: json['file_name']?.toString() ?? '',
+      fileUrl: json['file_url']?.toString() ?? '',
+      fileType: json['file_type'],
+      size: json['size'] is num ? json['size'].toInt() : null,
+      uploadedAt: json['uploaded_at'] != null
+          ? DateTime.parse(json['uploaded_at'])
+          : DateTime.now(),
+      uploadedBy: json['uploaded_by']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'attachment_id': attachmentId,
+      'file_name': fileName,
+      'file_url': fileUrl,
+      'file_type': fileType,
+      'size': size,
+      'uploaded_at': uploadedAt.toIso8601String(),
+      'uploaded_by': uploadedBy,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'Attachment(fileName:$attachmentId $fileName, fileUrl: $fileUrl)';
+  }
+}
+
 class TaskModel {
   final String? id;
   final String taskId;
   final String taskName;
   final String? description;
-
   final DateTime startDate;
   final DateTime? endDate;
-
   final String priority;
   final String status;
-
   final String? parentTaskId;
   final String projectId;
   final String tasktypeId;
   final List<String> assignedTo;
-  String? projectName;
+  final List<Attachment> attachments;
+  final String? projectName;
 
   TaskModel({
     this.id,
@@ -29,8 +78,10 @@ class TaskModel {
     required this.projectId,
     required this.tasktypeId,
     required this.assignedTo,
+    List<Attachment>? attachments,
     this.projectName,
-  }) : startDate = startDate ?? DateTime.now();
+  })  : startDate = startDate ?? DateTime.now(),
+        attachments = attachments ?? [];
 
   TaskModel copyWith({
     String? id,
@@ -45,6 +96,7 @@ class TaskModel {
     String? projectId,
     String? tasktypeId,
     List<String>? assignedTo,
+    List<Attachment>? attachments,
     String? projectName,
   }) {
     return TaskModel(
@@ -60,6 +112,7 @@ class TaskModel {
       projectId: projectId ?? this.projectId,
       tasktypeId: tasktypeId ?? this.tasktypeId,
       assignedTo: assignedTo ?? this.assignedTo,
+      attachments: attachments ?? this.attachments,
       projectName: projectName ?? this.projectName,
     );
   }
@@ -67,57 +120,43 @@ class TaskModel {
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
       id: json['_id']?.toString(),
-      taskId: json['task_id'].toString(),
-      taskName: json['task_name'].toString(),
+      taskId: json['task_id']?.toString() ?? '',
+      taskName: json['task_name']?.toString() ?? '',
       description: json['description'],
       startDate: json['start_date'] != null
           ? DateTime.parse(json['start_date'])
           : DateTime.now(),
       endDate:
           json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
-      priority: json['priority'] ?? 'low',
+      priority: json['priority'] ?? 'normal',
       status: json['status'] ?? 'new_task',
-      parentTaskId: json['parent_task_id'],
-
-      // Xử lý project_id - lấy ID dạng String
+      parentTaskId: json['parent_task_id']?.toString(),
       projectId: json['project_id'] is Map
           ? json['project_id']['project_id'].toString()
           : json['project_id'].toString(),
-
-      // Xử lý task_type_id - lấy ID dạng String
       tasktypeId: json['task_type_id'] is Map
           ? json['task_type_id']['task_type_id'].toString()
           : json['task_type_id'].toString(),
-
-      // Xử lý assigned_to - chuyển thành List<String>
       assignedTo: _parseAssignedTo(json['assigned_to']),
-
+      attachments: (json['attachments'] as List<dynamic>?)
+              ?.map((e) => Attachment.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       projectName: json['projectName'],
     );
   }
 
-  // Helper method để parse assigned_to thành List<String>
   static List<String> _parseAssignedTo(dynamic assignedTo) {
     if (assignedTo == null) return [];
-
-    // Nếu là List
     if (assignedTo is List) {
       return assignedTo.map((e) {
         if (e is Map) {
-          // Nếu là Map, lấy employee_id
-          return e['employee_id'].toString();
-        } else {
-          // Nếu đã là String ID
-          return e.toString();
+          return e['employee_id']?.toString() ?? '';
         }
+        return e.toString();
       }).toList();
     }
-
-    // Nếu là String đơn lẻ
-    if (assignedTo is String) {
-      return [assignedTo];
-    }
-
+    if (assignedTo is String) return [assignedTo];
     return [];
   }
 
@@ -135,6 +174,7 @@ class TaskModel {
       'project_id': projectId,
       'task_type_id': tasktypeId,
       'assigned_to': assignedTo,
+      'attachments': attachments.map((a) => a.toJson()).toList(),
     };
   }
 
@@ -144,6 +184,7 @@ class TaskModel {
         'priority: $priority, status: $status, '
         'startDate: $startDate, endDate: $endDate, '
         'projectId: $projectId, tasktypeId: $tasktypeId, '
-        'assignedTo: ${assignedTo.join(', ')})';
+        'assignedTo: ${assignedTo.join(', ')}, '
+        'attachments: ${attachments.length} file(s))';
   }
 }
