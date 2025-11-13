@@ -1,0 +1,18 @@
+Sử dụng một vpn được cấp cho 							|
+Chỉ sử dụng được trên máy tính							|
+Sử dụng vpn đó trên máy tình và chia sẽ thông qua kết nối wifi từ máy tính	|
+										|
+Anh Minh Châu gợi ý								|
+________________________________________________________________________________|
+
+
+vpn tự do bên ngoài không phải trong công ty
+
+Máy public truy cập vào local thì cần đợi VPN của local để thiết bị device kết nối, và không tự truy cập vào được
+
+Máy local truy cập vào server ở bên ngoài ==> Chỉ cần internet là được nếu server đã được public 
+
+add vpn trên mobile sau đó thực hiện TSS rồi test
+thử add vpn kết nối với trên mobile 
+
+
