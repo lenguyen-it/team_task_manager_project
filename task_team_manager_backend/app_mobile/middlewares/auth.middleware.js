@@ -16,7 +16,7 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, secret);
-    req.user = decoded;
+    req.employee = decoded;
     next();
   } catch (error) {
     return next(new ApiError(403, "Invalid token"));
@@ -31,7 +31,7 @@ const authorize = (roles = []) => {
 
     try {
       const employee = await employeeService.findByEmployeeId(
-        req.user.employee_id
+        req.employee.employee_id
       );
       if (!employee) {
         return next(new ApiError(404, "Employee not found"));
