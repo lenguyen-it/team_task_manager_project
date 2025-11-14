@@ -95,10 +95,10 @@ class TasktypeService {
         return TasktypeModel.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Cập nhật nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Cập nhật loại công việc thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi cập nhật nhân viên: $e');
+      throw Exception('Lỗi cập nhật loại công việc: $e');
     }
   }
 
@@ -113,10 +113,10 @@ class TasktypeService {
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Xóa loại công việc thất bại');
       }
     } catch (e) {
-      throw Exception('Lỗi xóa nhân viên: $e');
+      throw Exception('Lỗi xóa loại công việc: $e');
     }
   }
 
