@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:task_team_frontend_mobile/screens/manager/add_task_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/list_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/manager_chart_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/manager_home_screen.dart';
 import '../providers/auth_provider.dart';
-import '../screens/calendar_screen.dart';
+import '../screens/all_task_screen.dart';
 import '../screens/chart_screen.dart';
 import '../screens/home_screen.dart';
-import '../screens/role_screen.dart';
 import '../screens/setting_screen.dart';
-import '../screens/task_screen.dart';
 
 class BottomNavbar extends StatefulWidget {
   const BottomNavbar({super.key});
@@ -18,59 +20,50 @@ class BottomNavbar extends StatefulWidget {
 class _BottomNavbarState extends State<BottomNavbar> {
   int _selectedScreenIndex = 0;
 
-  // Config cho từng role - hoàn toàn độc lập
   final Map<String, RoleNavConfig> _roleConfigs = {
     'manager': RoleNavConfig(
       widgets: const [
-        HomeScreen(),
-        CalendarScreen(), Center(child: Text('Add Task Screen')), // Placeholder
-        Center(child: Text('Detail Screen')), // Placeholder
+        ManagerHomeScreen(),
+        ManagerChartScreen(),
+        ListScreen(),
         SettingScreen(),
       ],
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: 'Calendar'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle, size: 40), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+        BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Biểu đồ'),
         BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Danh sách'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
       hasFloatingButton: true,
-      floatingButtonIndex: 2,
+      floatingButtonIndex: null,
+    ),
+    'admin': RoleNavConfig(
+      widgets: const [
+        ManagerHomeScreen(),
+        ManagerChartScreen(),
+        ListScreen(),
+        SettingScreen(),
+      ],
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+        BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Biểu đồ'),
+        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Danh sách'),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+      ],
+      hasFloatingButton: true,
+      floatingButtonIndex: null,
     ),
     'staff': RoleNavConfig(
       widgets: const [
         HomeScreen(),
-        CalendarScreen(), // Placeholder
-        ChartScreen(), // Placeholder
+        AllTaskScreen(),
+        ChartScreen(),
         SettingScreen(),
       ],
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: 'Calendar'),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+        BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Công việc'),
         BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Biểu đồ'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-      ],
-      hasFloatingButton: false,
-    ),
-    'admin': RoleNavConfig(
-      widgets: const [
-        HomeScreen(),
-        // RoleScreen(),
-        // EmployeeScreen(),
-        TaskScreen(),
-        // Center(child: Text('Admin Dashboard')), // Placeholder
-        Center(child: Text('Calendar Screen')), // Placeholder
-        SettingScreen(),
-      ],
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard), label: 'Dashboard'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: 'Calendar'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
       hasFloatingButton: false,
@@ -118,6 +111,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: config.widgets[_selectedScreenIndex],
       bottomNavigationBar: _buildBottomNav(config),
       floatingActionButton:
@@ -165,7 +159,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
                             color: isSelected
                                 ? const Color(0xFF5DADE2)
                                 : Colors.grey,
-                            fontSize: 11,
+                            fontSize: 12,
                           ),
                         ),
                     ],
@@ -192,11 +186,21 @@ class _BottomNavbarState extends State<BottomNavbar> {
   }
 
   Widget _buildFloatingButton(RoleNavConfig config) {
-    return FloatingActionButton(
-      onPressed: () => _onPageTapped(config.floatingButtonIndex!, config),
-      backgroundColor: const Color(0xFF5DADE2),
-      elevation: 4,
-      child: const Icon(Icons.add, size: 32, color: Colors.white),
+    return Transform.translate(
+      offset: const Offset(0, 8),
+      child: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AddTaskScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF5DADE2),
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 32, color: Colors.white),
+      ),
     );
   }
 }
