@@ -8,6 +8,7 @@ import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/models/employee_model.dart';
 
 import '../config/api_config.dart';
+import '../providers/auth_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String token;
@@ -150,23 +151,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         imageFile: _avatarFile,
       );
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cập nhật thông tin thành công'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context, true);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(provider.error ?? 'Cập nhật thất bại'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (mounted && success) {
+        final updatedEmployeeFromProvider = provider.employees.firstWhere(
+          (e) => e.employeeId == widget.employee.employeeId,
+        );
+
+        final authProvider = context.read<AuthProvider>();
+        authProvider.updateCurrentEmployee(updatedEmployeeFromProvider);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Cập nhật thành công'),
+              backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -268,48 +266,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: ClipOval(
-                      // child: _avatarFile != null
-                      //     ? Image.file(
-                      //         _avatarFile!,
-                      //         fit: BoxFit.cover,
-                      //         width: 100,
-                      //         height: 100,
-                      //       )
-                      //     : (_avatarUrl.isNotEmpty
-                      //         ? Image.network(
-                      //             _avatarUrl,
-                      //             fit: BoxFit.cover,
-                      //             width: 100,
-                      //             height: 100,
-                      //             errorBuilder: (context, error, stackTrace) {
-                      //               return Icon(
-                      //                 Icons.person,
-                      //                 size: 50,
-                      //                 color: Colors.purple[300],
-                      //               );
-                      //             },
-                      //             loadingBuilder:
-                      //                 (context, child, loadingProgress) {
-                      //               if (loadingProgress == null) return child;
-                      //               return Center(
-                      //                 child: CircularProgressIndicator(
-                      //                   value: loadingProgress
-                      //                               .expectedTotalBytes !=
-                      //                           null
-                      //                       ? loadingProgress
-                      //                               .cumulativeBytesLoaded /
-                      //                           loadingProgress
-                      //                               .expectedTotalBytes!
-                      //                       : null,
-                      //                 ),
-                      //               );
-                      //             },
-                      //           )
-                      //         : Icon(
-                      //             Icons.person,
-                      //             size: 50,
-                      //             color: Colors.purple[300],
-                      //           )),
                       child: _avatarFile != null
                           ? Image.file(_avatarFile!, fit: BoxFit.cover)
                           : (_avatarUrl.isNotEmpty
