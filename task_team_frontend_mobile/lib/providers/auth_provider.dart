@@ -183,6 +183,11 @@ class AuthProvider extends ChangeNotifier {
     return allowedRoles.contains(_currentEmployee!.roleId);
   }
 
+  void updateCurrentEmployee(EmployeeModel employee) {
+    _currentEmployee = employee;
+    notifyListeners();
+  }
+
   // Reset error message
   void clearError() {
     _errorMessage = null;
