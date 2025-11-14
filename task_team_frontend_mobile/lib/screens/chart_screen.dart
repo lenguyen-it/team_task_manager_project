@@ -142,10 +142,8 @@ class _ChartScreenState extends State<ChartScreen> {
 
     if (index < 0) return;
 
-    // Đợi cho đến khi scrollController đã gắn vào widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_weeklyChartScrollController.hasClients) {
-        // Nếu chưa có, đợi 1 frame nữa
         Future.delayed(const Duration(milliseconds: 100), _scrollToCurrentWeek);
         return;
       }
@@ -814,7 +812,7 @@ class _ChartScreenState extends State<ChartScreen> {
 
     return Container(
       height: 200,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -837,7 +835,7 @@ class _ChartScreenState extends State<ChartScreen> {
               children: [
                 // Trục Y
                 SizedBox(
-                  width: 20,
+                  width: 40,
                   child: BarChart(
                     BarChartData(
                       alignment: BarChartAlignment.start,
@@ -846,8 +844,23 @@ class _ChartScreenState extends State<ChartScreen> {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 20,
+                            reservedSize: 40,
                             interval: interval,
+                            getTitlesWidget: (value, meta) {
+                              if (value % interval != 0) {
+                                return const SizedBox();
+                              }
+
+                              return Text(
+                                value.toInt().toString(),
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              );
+                            },
                           ),
                         ),
                         bottomTitles: AxisTitles(
