@@ -56,6 +56,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() => _loadData());
+
     _taskNameController = TextEditingController();
     _taskIdController = TextEditingController();
     _descriptionController = TextEditingController();
@@ -65,7 +67,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
-      _loadData();
       _isInitialized = true;
     }
   }
