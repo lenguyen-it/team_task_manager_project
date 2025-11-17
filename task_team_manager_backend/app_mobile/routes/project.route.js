@@ -6,11 +6,7 @@ const router = express.Router();
 
 router
   .route("/")
-  .get(
-    verifyToken,
-    authorize(["admin", "manager", "staff"]),
-    ProjectController.findAll
-  )
+  .get(verifyToken, ProjectController.findAll)
   .post(verifyToken, authorize(["admin", "manager"]), ProjectController.create)
   .delete(
     verifyToken,
