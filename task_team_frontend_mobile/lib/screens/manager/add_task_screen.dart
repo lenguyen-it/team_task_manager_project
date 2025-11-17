@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/models/project_model.dart';
 import 'package:task_team_frontend_mobile/models/task_model.dart';
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
+import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/providers/project_provider.dart';
 import 'package:task_team_frontend_mobile/providers/task_provider.dart';
 import 'package:task_team_frontend_mobile/providers/tasktype_provider.dart';
@@ -28,9 +29,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   ProjectModel? _selectedProject;
   String? _selectedTasktypeId;
   String _selectedStatus = 'new_task';
-  String _selectedPriority = 'normal';
+  String _selectedPriority = 'low';
   DateTime _startDate = DateTime.now();
   DateTime? _endDate;
+  List<String> _selectedEmployees = [];
 
   final List<Map<String, String>> _statusOptions = [
     {'value': 'wait', 'label': 'Chờ xác nhận'},
@@ -45,7 +47,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     {'value': 'high', 'label': 'Cao'},
     {'value': 'normal', 'label': 'Bình thường'},
     {'value': 'low', 'label': 'Thấp'},
-    {'value': 'urgent', 'label': 'Khẩn cấp'},
+    // {'value': 'urgent', 'label': 'Khẩn cấp'},
   ];
 
   bool _isLoading = false;
@@ -76,6 +78,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         Provider.of<ProjectProvider>(context, listen: false);
     final tasktypeProvider =
         Provider.of<TasktypeProvider>(context, listen: false);
+    final employeeProvider =
+        Provider.of<EmployeeProvider>(context, listen: false);
 
     final token = authProvider.token;
     if (token == null) {
@@ -87,6 +91,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       await Future.wait([
         projectProvider.getAllProject(token: token),
         tasktypeProvider.getAllTaskType(token: token),
+        employeeProvider.getAllEmployee(token: token),
       ]);
     } catch (e) {
       if (mounted) {
@@ -135,6 +140,98 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
+  void _showEmployeeSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<EmployeeProvider>(
+          builder: (context, employeeProvider, _) {
+            final employees = employeeProvider.employees;
+
+            List<String> tempSelected = List.from(_selectedEmployees);
+
+            return StatefulBuilder(
+              builder: (context, setDialogState) {
+                return AlertDialog(
+                  title: const Text(
+                    'Chọn nhân viên tham gia',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: employees.isEmpty
+                        ? const Center(
+                            child: Text('Không có nhân viên nào'),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: employees.length,
+                            itemBuilder: (context, index) {
+                              final employee = employees[index];
+                              final isSelected =
+                                  tempSelected.contains(employee.employeeId);
+
+                              return CheckboxListTile(
+                                title: Text(
+                                  employee.employeeName,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                subtitle: Text(
+                                  employee.employeeId,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                value: isSelected,
+                                activeColor: Colors.purple.shade400,
+                                onChanged: (bool? value) {
+                                  setDialogState(() {
+                                    if (value == true) {
+                                      tempSelected.add(employee.employeeId);
+                                    } else {
+                                      tempSelected.remove(employee.employeeId);
+                                    }
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Hủy',
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedEmployees = tempSelected;
+                        });
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF9B59B6),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Xác nhận'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _saveTask() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -150,6 +247,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (_selectedTasktypeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn loại công việc')),
+      );
+      return;
+    }
+
+    if (_selectedEmployees.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn ít nhất một nhân viên')),
       );
       return;
     }
@@ -183,7 +287,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         status: TaskStatus.fromString(_selectedStatus),
         projectId: _selectedProject!.projectId,
         tasktypeId: _selectedTasktypeId!,
-        assignedTo: [currentEmployeeId],
+        assignedTo: _selectedEmployees,
       );
 
       final success = await taskProvider.createTask(newTask, token);
@@ -228,7 +332,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
+      // resizeToAvoidBottomInset: false,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -418,6 +522,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 16),
+
+                              // Nhân viên tham gia (Mới thêm)
+                              _buildLabel('Nhân viên tham gia: *'),
+                              const SizedBox(height: 8),
+                              _buildEmployeeSelectionField(),
                               const SizedBox(height: 16),
 
                               // Nội dung công việc
@@ -774,6 +884,63 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildEmployeeSelectionField() {
+    return Consumer<EmployeeProvider>(
+      builder: (context, employeeProvider, _) {
+        final employees = employeeProvider.employees;
+
+        String displayText;
+        if (_selectedEmployees.isEmpty) {
+          displayText = 'Chọn nhân viên';
+        } else if (_selectedEmployees.length == 1) {
+          final employee = employees.firstWhere(
+            (e) => e.employeeId == _selectedEmployees[0],
+            orElse: () => employees.first,
+          );
+          displayText = employee.employeeName;
+        } else {
+          displayText = '${_selectedEmployees.length} nhân viên được chọn';
+        }
+
+        return GestureDetector(
+          onTap: _showEmployeeSelectionDialog,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.black54),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    displayText,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _selectedEmployees.isEmpty
+                          ? Colors.black38
+                          : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.people,
+                  size: 18,
+                  color: Colors.grey.shade600,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
