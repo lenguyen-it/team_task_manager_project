@@ -51,6 +51,25 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndRefreshIfNeeded();
+    });
+  }
+
+  Future<void> _checkAndRefreshIfNeeded() async {
+    if (!mounted) return;
+
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final task = Provider.of<TaskProvider>(context, listen: false);
+
+    if (auth.isAuthenticated && auth.token != null && _hasLoadedTasks) {
+      await task.getAllTask(token: auth.token!);
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _statusUpdateTimer?.cancel();
