@@ -3,10 +3,8 @@ const MongoDB = require("../utils/mongodb.util");
 const ProjectService = require("../services/project.service");
 
 exports.create = async (req, res, next) => {
-  if (!req.body?.project_name && !req.body?.project_id) {
-    return next(
-      new ApiError(400, "Project name và Project id cannot be empty")
-    );
+  if (!req.body?.project_name || !req.body?.project_id) {
+    return next(new ApiError(400, "Project name and Project id are required"));
   }
 
   try {
