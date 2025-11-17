@@ -168,11 +168,22 @@ class TaskService {
       // Thêm header
       request.headers['Authorization'] = 'Bearer $token';
 
+      print('=== REQUEST BODY ===');
+      print(jsonEncode(taskData));
+      print('assigned_to type: ${taskData?['assigned_to'].runtimeType}');
+      print('assigned_to value: ${taskData?['assigned_to']}');
+
       // Thêm dữ liệu task (nếu có)
       if (taskData != null) {
         taskData.forEach((key, value) {
           if (value != null) {
-            request.fields[key] = value.toString();
+            if (key == 'assigned_to' && value is List) {
+              for (int i = 0; i < value.length; i++) {
+                request.fields['assigned_to[$i]'] = value[i].toString();
+              }
+            } else {
+              request.fields[key] = value.toString();
+            }
           }
         });
       }
