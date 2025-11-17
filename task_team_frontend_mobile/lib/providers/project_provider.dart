@@ -55,6 +55,7 @@ class ProjectProvider with ChangeNotifier {
         orElse: () => ProjectModel(
           projectId: '',
           projectName: '',
+          projectManagerId: '',
           description: '',
           status: 'planning',
         ),
@@ -87,6 +88,8 @@ class ProjectProvider with ChangeNotifier {
       _error = e.toString();
       notifyListeners();
       return false;
+    } finally {
+      _isLoading = false; // ✅ Added: ensure loading is reset
     }
   }
 
@@ -102,25 +105,32 @@ class ProjectProvider with ChangeNotifier {
       final idx = _projects.indexWhere((e) => e.projectId == projectId);
       if (idx != -1) {
         _projects[idx] = project;
-        notifyListeners();
       }
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   Future<bool> deleteProject(String projectId, String token) async {
+    _isLoading = true; // ✅ Added
+    _error = null; // ✅ Added
+    notifyListeners();
+
     try {
       await _projectService.deleteProject(projectId, token);
       _projects.removeWhere((e) => e.projectId == projectId);
       return true;
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false; // ✅ Added
+      notifyListeners(); // ✅ Fixed: always notify
     }
   }
 
@@ -131,17 +141,14 @@ class ProjectProvider with ChangeNotifier {
 
     try {
       await _projectService.deleteAllProject(token);
-
       _projects.clear();
-
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
-      _isLoading = false;
       _error = e.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
