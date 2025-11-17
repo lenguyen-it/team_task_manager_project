@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/models/project_model.dart';
+import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/services/project_service.dart';
 
 class ProjectProvider with ChangeNotifier {
@@ -159,7 +161,14 @@ class ProjectProvider with ChangeNotifier {
   }
 
   // Refresh
-  Future<void> refresh(String token) async {
-    await getAllProject(token: token);
+  Future<void> refresh(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    if (token != null) {
+      await getAllProject(token: token);
+    } else {
+      _error = "Phiên đăng nhập đã hết hạn";
+      notifyListeners();
+    }
   }
 }
