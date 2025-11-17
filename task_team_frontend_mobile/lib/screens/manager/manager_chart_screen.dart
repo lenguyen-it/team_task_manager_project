@@ -392,28 +392,28 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
           // 4 cards displayed vertically
           _buildDashboardCard(
             'Tổng số',
-            totalTasks.toString(),
+            '$totalTasks công việc',
             Icons.assignment,
             Colors.blue,
           ),
           const SizedBox(height: 12),
           _buildDashboardCard(
             'Hôm nay',
-            todayTasks.toString(),
+            '$todayTasks công việc',
             Icons.today,
             Colors.green,
           ),
           const SizedBox(height: 12),
           _buildDashboardCard(
             'Tuần này',
-            weekTasks.toString(),
+            '$weekTasks công việc',
             Icons.calendar_view_week,
             Colors.orange,
           ),
           const SizedBox(height: 12),
           _buildDashboardCard(
             'Tháng này',
-            monthTasks.toString(),
+            '$monthTasks công việc',
             Icons.calendar_month,
             Colors.purple,
           ),
@@ -443,7 +443,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 20,
                     color: Colors.grey.shade700,
                     fontWeight: FontWeight.w500,
                   ),
@@ -452,7 +452,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
@@ -1416,6 +1416,12 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
   Widget _buildDeadlineSection(List<TaskModel> tasks) {
     final now = DateTime.now();
     final upcomingTasks = tasks.where((t) {
+      if (t.status == TaskStatus.done ||
+          t.status == TaskStatus.wait ||
+          t.status == TaskStatus.pause) {
+        return false;
+      }
+
       if (t.endDate == null) return false;
       final daysUntilEnd = t.endDate!.difference(now).inDays;
       return daysUntilEnd >= 0 && daysUntilEnd <= 1;
