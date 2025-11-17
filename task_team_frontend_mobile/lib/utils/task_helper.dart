@@ -89,6 +89,35 @@ class TaskHelpers {
         .toList();
   }
 
+  // Sắp xếp task theo độ ưu tiên (không sắp xếp task pause, done, wait)
+  static List<TaskModel> sortTasksByPriority(List<TaskModel> tasks) {
+    // Tách các task không cần sắp xếp và cần sắp xếp
+    final noSortTasks = tasks
+        .where((t) =>
+            t.status == TaskStatus.pause ||
+            t.status == TaskStatus.done ||
+            t.status == TaskStatus.wait)
+        .toList();
+
+    final sortableTasks = tasks
+        .where((t) =>
+            t.status != TaskStatus.pause &&
+            t.status != TaskStatus.done &&
+            t.status != TaskStatus.wait)
+        .toList();
+
+    // Sắp xếp các task cần sắp xếp theo độ ưu tiên: high -> normal -> low
+    sortableTasks.sort((a, b) {
+      final priorityOrder = {'high': 0, 'normal': 1, 'low': 2};
+      final aPriority = priorityOrder[a.priority.toLowerCase()] ?? 3;
+      final bPriority = priorityOrder[b.priority.toLowerCase()] ?? 3;
+      return aPriority.compareTo(bPriority);
+    });
+
+    // Ghép lại: task đã sắp xếp trước, task không sắp xếp sau
+    return [...sortableTasks, ...noSortTasks];
+  }
+
   // Danh sách các filter options
   static const List<String> filterOptions = [
     'Tất cả',
