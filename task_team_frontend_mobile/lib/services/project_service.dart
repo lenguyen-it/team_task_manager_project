@@ -16,7 +16,7 @@ class ProjectService {
       );
 
       print('GET ALL PROJECTS - Status: ${response.statusCode}');
-      print('Response body: \\n${response.body}');
+      print('Response body: \n${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body) as List;
@@ -47,7 +47,7 @@ class ProjectService {
         return ProjectModel.fromJson(data);
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Không lấy được nhân viên');
+        throw Exception(error['message'] ?? 'Không lấy được dự án'); // ✅ Fixed
       }
     } catch (e) {
       throw Exception('Đã xảy ra lỗi: $e');
@@ -94,10 +94,10 @@ class ProjectService {
         );
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Tạo nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Tạo dự án thất bại'); // ✅ Fixed
       }
     } catch (e) {
-      throw Exception('Lỗi tạo nhân viên: $e');
+      throw Exception('Lỗi tạo dự án: $e'); // ✅ Fixed
     }
   }
 
@@ -137,10 +137,10 @@ class ProjectService {
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Xóa dự án thất bại'); // ✅ Fixed
       }
     } catch (e) {
-      throw Exception('Lỗi xóa nhân viên: $e');
+      throw Exception('Lỗi xóa dự án: $e'); // ✅ Fixed
     }
   }
 
@@ -155,10 +155,10 @@ class ProjectService {
 
       if (response.statusCode != 200) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Xóa nhân viên thất bại');
+        throw Exception(error['message'] ?? 'Xóa dự án thất bại'); // ✅ Fixed
       }
     } catch (e) {
-      throw Exception('Lỗi xóa toàn bộ nhân viên: $e');
+      throw Exception('Lỗi xóa toàn bộ dự án: $e'); // ✅ Fixed
     }
   }
 }
