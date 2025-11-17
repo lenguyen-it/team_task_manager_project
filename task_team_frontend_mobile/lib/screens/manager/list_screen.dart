@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:task_team_frontend_mobile/screens/manager/list_employee_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/list_project_screen.dart';
 
 class ListScreen extends StatefulWidget {
   const ListScreen({super.key});
@@ -40,7 +42,14 @@ class _ListScreenState extends State<ListScreen> {
               _buildCard(
                 icon: Icons.folder,
                 title: 'Dự án',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ListProjectScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildCard(
@@ -52,7 +61,14 @@ class _ListScreenState extends State<ListScreen> {
               _buildCard(
                 icon: Icons.people,
                 title: 'Nhân viên',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ListEmployeeScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
