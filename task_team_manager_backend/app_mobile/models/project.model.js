@@ -12,6 +12,12 @@ const projectSchema = new mongoose.Schema({
     required: [true, "Name project is required"],
   },
 
+  project_manager_id: {
+    type: String,
+    ref: "Employee",
+    required: [true, "Manager project is required"],
+  },
+
   description: {
     type: String,
     default: "No description yet ",
@@ -29,6 +35,7 @@ const projectSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["planning", "on_process", "done"],
+    default: "planning",
   },
 });
 
