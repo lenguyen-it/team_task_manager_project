@@ -9,10 +9,11 @@ class ProjectService {
     const project = {
       project_id: payload.project_id,
       project_name: payload.project_name,
+      project_manager_id: payload.project_manager_id,
       description: payload.description,
-      start_date: payload.start_date || new Date(),
-      end_date: payload.end_date || null,
-      status: payload.status || "planning",
+      start_date: payload.start_date,
+      end_date: payload.end_date,
+      status: payload.status,
     };
 
     Object.keys(project).forEach(
@@ -36,7 +37,7 @@ class ProjectService {
   }
 
   async findById(id) {
-    return await this.User.findOne({
+    return await this.Project.findOne({
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     });
   }
