@@ -109,7 +109,9 @@ class _AllTaskScreenState extends State<AllTaskScreen> {
 
   List<TaskModel> _getDisplayTasks(TaskProvider taskProvider) {
     final baseTasks = _isSearchMode ? _searchResults : taskProvider.tasks;
-    return TaskHelpers.filterTasksByStatus(baseTasks, _selectedFilter);
+    final filteredTasks =
+        TaskHelpers.filterTasksByStatus(baseTasks, _selectedFilter);
+    return TaskHelpers.sortTasksByPriority(filteredTasks);
   }
 
   void _handleSearchChanged(String value, TaskProvider provider) {
