@@ -128,7 +128,9 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
 
   List<TaskModel> _getDisplayTasks(TaskProvider taskProvider) {
     final baseTasks = _isSearchMode ? _searchResults : taskProvider.tasks;
-    return TaskHelpers.filterTasksByStatus(baseTasks, _selectedFilter);
+    final filteredTasks =
+        TaskHelpers.filterTasksByStatus(baseTasks, _selectedFilter);
+    return TaskHelpers.sortTasksByPriority(filteredTasks);
   }
 
   void _handleSearchChanged(String value, TaskProvider provider) {
@@ -171,114 +173,113 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Provider.of<AuthProvider>(context);
-    final taskProvider = Provider.of<TaskProvider>(context);
-
-    final tasksInSelectedDay =
-        taskProvider.getTaskByDate(_selectedDay ?? DateTime.now());
-
-    final allTasks = taskProvider.tasks;
-    final displayTasks = _getDisplayTasks(taskProvider);
-
-    // Tính toán số lượng task theo status
-    final total = allTasks.length;
-    final newTasks =
-        TaskHelpers.countTasksByStatus(allTasks, TaskStatus.newTask);
-    final inProgress =
-        TaskHelpers.countTasksByStatus(allTasks, TaskStatus.inProgress);
-    final wait = TaskHelpers.countTasksByStatus(allTasks, TaskStatus.wait);
-    final done = TaskHelpers.countTasksByStatus(allTasks, TaskStatus.done);
-    final overdue =
-        TaskHelpers.countTasksByStatus(allTasks, TaskStatus.overdue);
-
     return SafeArea(
       bottom: false,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Calendar
-            TaskCalendarWidget(
-              focusedDay: _focusedDay,
-              selectedDay: _selectedDay,
-              calendarFormat: CalendarFormat.week,
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                setState(() => _focusedDay = focusedDay);
-              },
-              taskProvider: taskProvider,
-            ),
+      child: Consumer<TaskProvider>(
+        builder: (context, taskProvider, child) {
+          final tasksInSelectedDay =
+              taskProvider.getTaskByDate(_selectedDay ?? DateTime.now());
 
-            const SizedBox(height: 24),
+          final allTasks = taskProvider.tasks;
+          final displayTasks = _getDisplayTasks(taskProvider);
 
-            // Today section
-            TodaySectionWidget(
-              selectedDay: _selectedDay,
-              tasks: tasksInSelectedDay,
-              isLoading: taskProvider.isLoading,
-              hasLoadedTasks: _hasLoadedTasks,
-            ),
+          // Tính toán stats
+          final total = allTasks.length;
+          final newTasks =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.newTask);
+          final inProgress =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.inProgress);
+          final wait =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.wait);
+          final done =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.done);
+          final overdue =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.overdue);
 
-            const SizedBox(height: 24),
-            _buildLabel('Thông kê công việc:'),
-            const SizedBox(height: 8),
-            // Stats Section
-            StatsSectionWidget(
-              total: total,
-              newTasks: newTasks,
-              inProgress: inProgress,
-              wait: wait,
-              done: done,
-              overdue: overdue,
-            ),
-
-            const SizedBox(height: 16),
-
-            // All tasks section
-            Column(
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header + Search
-                TaskHeaderWidget(
-                  isSearching: _isSearching,
-                  searchController: _searchController,
-                  onSearchPressed: () => setState(() => _isSearching = true),
-                  onSearchClosed: _handleSearchClosed,
-                  onSearchChanged: (value) =>
-                      _handleSearchChanged(value, taskProvider),
+                // Calendar
+                TaskCalendarWidget(
+                  focusedDay: _focusedDay,
+                  selectedDay: _selectedDay,
+                  calendarFormat: CalendarFormat.week,
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  },
+                  onPageChanged: (focusedDay) {
+                    setState(() => _focusedDay = focusedDay);
+                  },
+                  taskProvider: taskProvider,
                 ),
 
-                // Filter Chips
-                FilterChipsWidget(
-                  selectedFilter: _selectedFilter,
-                  filterOptions: TaskHelpers.filterOptions,
-                  onFilterSelected: (option) {
-                    setState(() => _selectedFilter = option);
-                  },
+                const SizedBox(height: 24),
+
+                // Today section
+                TodaySectionWidget(
+                  selectedDay: _selectedDay,
+                  tasks: tasksInSelectedDay,
+                  isLoading: taskProvider.isLoading,
+                  hasLoadedTasks: _hasLoadedTasks,
+                ),
+
+                const SizedBox(height: 24),
+                _buildLabel('Thông kê công việc:'),
+                const SizedBox(height: 8),
+
+                // Stats Section
+                StatsSectionWidget(
+                  total: total,
+                  newTasks: newTasks,
+                  inProgress: inProgress,
+                  wait: wait,
+                  done: done,
+                  overdue: overdue,
                 ),
 
                 const SizedBox(height: 16),
 
-                // Task List
-                TaskListWidget(
-                  tasks: displayTasks,
-                  taskProvider: taskProvider,
-                  isSearchMode: _isSearchMode,
-                  hasLoadedTasks: _hasLoadedTasks,
-                  onRetry: _loadEmployeeTasks,
+                // All tasks section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TaskHeaderWidget(
+                      isSearching: _isSearching,
+                      searchController: _searchController,
+                      onSearchPressed: () =>
+                          setState(() => _isSearching = true),
+                      onSearchClosed: _handleSearchClosed,
+                      onSearchChanged: (value) =>
+                          _handleSearchChanged(value, taskProvider),
+                    ),
+                    FilterChipsWidget(
+                      selectedFilter: _selectedFilter,
+                      filterOptions: TaskHelpers.filterOptions,
+                      onFilterSelected: (option) {
+                        setState(() => _selectedFilter = option);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TaskListWidget(
+                      tasks: displayTasks,
+                      taskProvider: taskProvider,
+                      isSearchMode: _isSearchMode,
+                      hasLoadedTasks: _hasLoadedTasks,
+                      onRetry: _loadEmployeeTasks,
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: 80),
               ],
             ),
-
-            const SizedBox(height: 80),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
