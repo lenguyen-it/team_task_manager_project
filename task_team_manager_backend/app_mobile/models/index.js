@@ -3,6 +3,8 @@ const TaskTypeModel = require("./tasktype.model");
 const ProjectModel = require("./project.model");
 const RoleModel = require("./role.model");
 const TaskModel = require("./task.model");
+const Notification = require("./notification.model");
+const ActivityLog = require("./activitylog.model");
 
 module.export = {
   EmployeeModel,
@@ -10,4 +12,6 @@ module.export = {
   TaskTypeModel,
   ProjectModel,
   RoleModel,
+  Notification,
+  ActivityLog,
 };
