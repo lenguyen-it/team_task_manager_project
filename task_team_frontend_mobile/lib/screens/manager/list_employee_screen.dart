@@ -5,6 +5,8 @@ import 'package:task_team_frontend_mobile/models/role_model.dart';
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
 import 'package:task_team_frontend_mobile/providers/role_provider.dart';
+import 'package:task_team_frontend_mobile/screens/manager/add_employee_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/detail_employee_screen.dart';
 
 class ListEmployeeScreen extends StatefulWidget {
   const ListEmployeeScreen({super.key});
@@ -54,6 +56,9 @@ class _ListEmployeeScreenState extends State<ListEmployeeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Danh sách Nhân viên'),
@@ -61,8 +66,19 @@ class _ListEmployeeScreenState extends State<ListEmployeeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_to_photos),
-            onPressed: () {
-              // TODO: Thêm nhân viên
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddEmployeeScreen(token: token!),
+                ),
+              );
+
+              if (result == true && mounted) {
+                final employeeProvider =
+                    Provider.of<EmployeeProvider>(context, listen: false);
+                await employeeProvider.getAllEmployee(token: token!);
+              }
             },
           ),
         ],
@@ -213,7 +229,15 @@ class _ListEmployeeScreenState extends State<ListEmployeeScreen> {
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      // TODO: Xem chi tiết nhân viên
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailEmployeeScreen(
+                            token: token!,
+                            employeeId: employee.employeeId,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );
