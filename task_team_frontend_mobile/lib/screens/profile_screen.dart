@@ -199,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // Phone
                       _buildInfoField(
                         label: 'Số điện thoại:',
-                        value: _employee!.phone,
+                        value: _employee!.phone ?? 'Chưa có số',
                       ),
                       const SizedBox(height: 16),
 
@@ -213,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // Email
                       _buildInfoField(
                         label: 'Email:',
-                        value: _employee!.email,
+                        value: _employee!.email ?? 'Chưa có email',
                       ),
                       const SizedBox(height: 16),
 
