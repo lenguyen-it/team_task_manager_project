@@ -1,6 +1,6 @@
 const ApiError = require("../api-error");
 const MongoDB = require("../utils/mongodb.util");
-const { EmployeeService } = require("../services/employee.service");
+const EmployeeService = require("../services/employee.service");
 
 exports.create = async (req, res, next) => {
   console.log("req.body: ", req.body);
@@ -11,7 +11,9 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const image = req.file ? `/uploads/images/${req.file.filename}` : null;
     const employee = await employeeService.create(req.body, image);
 
@@ -25,7 +27,9 @@ exports.findAll = async (req, res, next) => {
   let data = [];
 
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const { employee_name } = req.query;
 
     if (employee_name) {
@@ -44,7 +48,9 @@ exports.findAll = async (req, res, next) => {
 
 exports.findOne = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const employee = await employeeService.findById(req.params.id);
 
     if (!employee) {
@@ -61,7 +67,9 @@ exports.findOne = async (req, res, next) => {
 
 exports.findByEmployeeId = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const employee = await employeeService.findByEmployeeId(
       req.params.employee_id
     );
@@ -78,7 +86,9 @@ exports.findByEmployeeId = async (req, res, next) => {
 
 exports.findByEmployeeName = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const employees = await employeeService.findByEmployeeName(
       req.query.employee_name || ""
     );
@@ -92,7 +102,9 @@ exports.findByEmployeeName = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const image = req.file
       ? `/uploads/images/${req.file.filename}`
       : req.body.image || null;
@@ -118,7 +130,8 @@ exports.updateByEmployeeId = async (req, res, next) => {
   console.log("req.file:", req.file);
 
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
 
     const image = req.file
       ? `/uploads/images/${req.file.filename}`
@@ -145,7 +158,9 @@ exports.updateByEmployeeId = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const deleted = await employeeService.delete(req.params.id);
 
     if (!deleted.value) {
@@ -160,7 +175,9 @@ exports.delete = async (req, res, next) => {
 
 exports.deleteByEmployeeId = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const deleted = await employeeService.deleteByEmployeeId(
       req.params.employee_id
     );
@@ -177,7 +194,9 @@ exports.deleteByEmployeeId = async (req, res, next) => {
 
 exports.deleteAll = async (req, res, next) => {
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const deletedCount = await employeeService.deleteAll();
 
     res.json({ message: `${deletedCount} employees deleted successfully` });

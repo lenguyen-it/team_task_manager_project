@@ -10,7 +10,9 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const taskType = await taskTypeService.create(req.body);
     res.status(201).json(taskType);
   } catch (error) {
@@ -23,7 +25,9 @@ exports.create = async (req, res, next) => {
 exports.findAll = async (req, res, next) => {
   let data = [];
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const { task_type_name } = req.query;
 
     if (task_type_name) {
@@ -42,7 +46,9 @@ exports.findAll = async (req, res, next) => {
 
 exports.findOne = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const taskType = await taskTypeService.findById(req.params.id);
 
     if (!taskType) {
@@ -59,7 +65,9 @@ exports.findOne = async (req, res, next) => {
 
 exports.findByTaskTypeId = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const taskType = await taskTypeService.findByTaskTypeId(
       req.params.task_type_id
     );
@@ -78,7 +86,9 @@ exports.findByTaskTypeId = async (req, res, next) => {
 
 exports.findByTaskTypeName = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const taskTypes = await taskTypeService.findByTaskTypeName(
       req.query.task_type_name || ""
     );
@@ -96,7 +106,9 @@ exports.update = async (req, res, next) => {
   }
 
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const updated = await taskTypeService.update(req.params.id, req.body);
     if (!updated.value) {
       return next(new ApiError(404, "Task type not found"));
@@ -115,7 +127,9 @@ exports.updateByTaskTypeId = async (req, res, next) => {
   }
 
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const updated = await taskTypeService.updateByTaskTypeId(
       req.params.task_type_id,
       req.body
@@ -133,7 +147,9 @@ exports.updateByTaskTypeId = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const deleted = await taskTypeService.delete(req.params.id);
 
     if (!deleted.value) {
@@ -150,7 +166,9 @@ exports.delete = async (req, res, next) => {
 
 exports.deleteByTaskTypeId = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const deleted = await taskTypeService.deleteByTaskTypeId(
       req.params.task_type_id
     );
@@ -169,7 +187,9 @@ exports.deleteByTaskTypeId = async (req, res, next) => {
 
 exports.deleteAll = async (req, res, next) => {
   try {
-    const taskTypeService = new TaskTypeService(MongoDB.client);
+    // const taskTypeService = new TaskTypeService(MongoDB.client);
+    const taskTypeService = new TaskTypeService();
+
     const deletedCount = await taskTypeService.deleteAll();
     res.json({ message: `${deletedCount} task types deleted successfully` });
   } catch (error) {

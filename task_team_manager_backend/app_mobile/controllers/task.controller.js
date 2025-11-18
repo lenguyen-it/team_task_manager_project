@@ -8,7 +8,8 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
     const task = await taskService.create(req.body);
     res.status(201).json(task);
   } catch (error) {
@@ -19,7 +20,8 @@ exports.create = async (req, res, next) => {
 exports.findAll = async (req, res, next) => {
   let data = [];
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
     const { task_name } = req.query;
 
     if (task_name) {
@@ -35,7 +37,8 @@ exports.findAll = async (req, res, next) => {
 
 exports.findByTaskId = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
     const task = await taskService.findByTaskId(req.params.task_id);
     if (!task) {
       return next(new ApiError(404, "Task not found"));
@@ -48,7 +51,8 @@ exports.findByTaskId = async (req, res, next) => {
 
 exports.findOne = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
     const task = await taskService.findById(req.params.id);
 
     if (!task) {
@@ -63,7 +67,8 @@ exports.findOne = async (req, res, next) => {
 
 exports.findByTaskName = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
     const tasks = await taskService.findByTaskName(req.params.task_name || "");
     res.json(tasks);
   } catch (error) {
@@ -72,7 +77,8 @@ exports.findByTaskName = async (req, res, next) => {
 };
 
 exports.findTaskByEmployee = async (req, res, next) => {
-  const taskService = new TaskService(MongoDB.client);
+  // const taskService = new TaskService(MongoDB.client);
+  const taskService = new TaskService();
 
   try {
     const { employee_id } = req.params;
@@ -92,7 +98,8 @@ exports.update = async (req, res, next) => {
   }
 
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
 
     const employeeId =
       req.employee?.employee_id || req.body.employee_id || "unknown";
@@ -129,7 +136,8 @@ exports.updateByTaskId = async (req, res, next) => {
   }
 
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
 
     const employeeId =
       req.employee?.employee_id || req.body.employee_id || "unknown";
@@ -174,7 +182,9 @@ exports.addAttachments = async (req, res, next) => {
   }
 
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const employeeId =
       req.employee?.employee_id || req.body.uploadedBy || "unknown";
     const updatedTask = await taskService.addAttachments(
@@ -204,7 +214,9 @@ exports.addAttachmentsByTaskId = async (req, res, next) => {
   }
 
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const employeeId =
       req.employee?.employee_id || req.body.uploadedBy || "unknown";
     const updatedTask = await taskService.addAttachmentsByTaskId(
@@ -230,7 +242,9 @@ exports.addAttachmentsByTaskId = async (req, res, next) => {
 
 exports.removeAttachment = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const { task_id, attachment_id } = req.params;
 
     const task = await taskService.findByTaskId(task_id);
@@ -264,7 +278,9 @@ exports.removeAttachment = async (req, res, next) => {
 
 exports.removeMultipleAttachments = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const { task_id } = req.params;
     const { attachment_ids } = req.body;
 
@@ -322,7 +338,9 @@ exports.removeMultipleAttachments = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const deleted = await taskService.delete(req.params.id);
     if (!deleted.value) {
       return next(new ApiError(404, "Task not found"));
@@ -335,7 +353,9 @@ exports.delete = async (req, res, next) => {
 
 exports.deleteByTaskId = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const deleted = await taskService.deleteByTaskId(req.params.task_id);
     if (!deleted) {
       return next(new ApiError(404, "Task not found"));
@@ -348,7 +368,9 @@ exports.deleteByTaskId = async (req, res, next) => {
 
 exports.deleteAll = async (req, res, next) => {
   try {
-    const taskService = new TaskService(MongoDB.client);
+    // const taskService = new TaskService(MongoDB.client);
+    const taskService = new TaskService();
+
     const deletedCount = await taskService.deleteAll();
     res.json({ message: `${deletedCount} tasks deleted successfully` });
   } catch (error) {

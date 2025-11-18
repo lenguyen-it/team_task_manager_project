@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const ApiError = require("../api-error");
 const MongoDB = require("../utils/mongodb.util");
-const { EmployeeService } = require("../services/employee.service");
+const EmployeeService = require("../services/employee.service");
 
 const secret = process.env.JWT_SECRET || "your_jwt_secret_key";
 const expiresIn = process.env.JWT_EXPIRES_IN || "24h";
@@ -16,7 +16,9 @@ exports.login = async (req, res, next) => {
   }
 
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const employee = await employeeService.findByEmployeeId(employee_id);
 
     if (!employee) {
@@ -63,7 +65,9 @@ exports.register = async (req, res, next) => {
   }
 
   try {
-    const employeeService = new EmployeeService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    const employeeService = new EmployeeService();
+
     const image = req.file ? `/uploads/${req.file.filename}` : null;
     const employee = await employeeService.create(req.body, image);
 

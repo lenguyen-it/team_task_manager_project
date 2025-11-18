@@ -8,7 +8,9 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const role = await roleService.create(req.body);
     res.status(201).json(role);
   } catch (error) {
@@ -20,7 +22,9 @@ exports.findAll = async (req, res, next) => {
   let data = [];
 
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const { role_name } = req.query;
 
     if (role_name) {
@@ -37,7 +41,9 @@ exports.findAll = async (req, res, next) => {
 
 exports.findOne = async (req, res, next) => {
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const role = await roleService.findById(req.params.id);
 
     if (!role) {
@@ -52,7 +58,9 @@ exports.findOne = async (req, res, next) => {
 
 exports.findByRoleId = async (req, res, next) => {
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const role = await roleService.findByRoleId(req.params.role_id);
     if (!role) {
       return next(new ApiError(404, "Role not found"));
@@ -69,7 +77,9 @@ exports.update = async (req, res, next) => {
   }
 
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const updated = await roleService.update(req.params.id, req.body);
     if (!updated.value) {
       return next(new ApiError(404, "Role not found"));
@@ -91,7 +101,9 @@ exports.updateByRoleId = async (req, res, next) => {
   }
 
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const updated = await roleService.updateByRoleId(
       req.params.role_id,
       req.body
@@ -114,7 +126,9 @@ exports.updateByRoleId = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const deleted = await roleService.delete(req.params.id);
     if (!deleted.value) {
       return next(new ApiError(404, "Role not found"));
@@ -127,7 +141,9 @@ exports.delete = async (req, res, next) => {
 
 exports.deleteByRoleId = async (req, res, next) => {
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const deleted = await roleService.deleteByRoleId(req.params.role_id);
 
     if (!deleted) {
@@ -142,7 +158,9 @@ exports.deleteByRoleId = async (req, res, next) => {
 
 exports.deleteAll = async (req, res, next) => {
   try {
-    const roleService = new RoleService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+    const roleService = new RoleService();
+
     const deletedCount = await roleService.deleteAll();
     res.json({ message: `${deletedCount} roles deleted successfully` });
   } catch (error) {

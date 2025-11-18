@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const ApiError = require("../api-error");
 const MongoDB = require("../utils/mongodb.util");
-const { EmployeeService } = require("../services/employee.service");
+const EmployeeService = require("../services/employee.service");
 const RoleService = require("../services/role.service");
 
 const secret = process.env.JWT_SECRET || "your_jwt_secret_key";
@@ -26,8 +26,11 @@ const verifyToken = async (req, res, next) => {
 // Middleware phân quyền dựa trên role
 const authorize = (roles = []) => {
   return async (req, res, next) => {
-    const employeeService = new EmployeeService(MongoDB.client);
-    const roleService = new RoleService(MongoDB.client);
+    // const employeeService = new EmployeeService(MongoDB.client);
+    // const roleService = new RoleService(MongoDB.client);
+
+    const employeeService = new EmployeeService();
+    const roleService = new RoleService();
 
     try {
       const employee = await employeeService.findByEmployeeId(

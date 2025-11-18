@@ -1,0 +1,36 @@
+const ActivityLogService = require("../services/activitylog.service");
+
+exports.getLogs = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      action,
+      employee_id,
+      target_type,
+    } = req.query;
+
+    // Xây dựng filter
+    const filter = {};
+    if (action) filter.action = action;
+    if (employee_id) filter.employee_id = employee_id;
+    if (target_type) filter.target_type = target_type;
+
+    const result = await ActivityLogService.getLogs(
+      filter,
+      parseInt(page, 10),
+      parseInt(limit, 10)
+    );
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error("Error in getLogs (ActivityLog):", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Lỗi server khi lấy nhật ký hoạt động",
+    });
+  }
+};

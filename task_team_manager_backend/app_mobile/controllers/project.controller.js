@@ -8,7 +8,9 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const project = await projectService.create(req.body);
 
     res.status(201).json(project);
@@ -21,7 +23,9 @@ exports.findAll = async (req, res, next) => {
   let data = [];
 
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const { project_name } = req.query;
 
     if (project_name) {
@@ -40,7 +44,9 @@ exports.findAll = async (req, res, next) => {
 
 exports.findOne = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const project = await projectService.findById(req.params.id);
 
     if (!project) {
@@ -57,7 +63,9 @@ exports.findOne = async (req, res, next) => {
 
 exports.findByProjectId = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const project = await projectService.findByProjectId(req.params.project_id);
     if (!project) {
       return next(new ApiError(404, "project not found"));
@@ -72,7 +80,9 @@ exports.findByProjectId = async (req, res, next) => {
 
 exports.findByProjectName = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const project = await projectService.findByProjectName(
       req.query.project_name || ""
     );
@@ -88,7 +98,9 @@ exports.update = async (req, res, next) => {
   }
 
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const updated = await projectService.update(req.params.id, req.body);
 
     if (!updated.value) {
@@ -112,7 +124,9 @@ exports.updateByProjectId = async (req, res, next) => {
   }
 
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const updated = await projectService.updateByProjectId(
       req.params.project_id,
       req.body
@@ -135,7 +149,9 @@ exports.updateByProjectId = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const deleted = await projectService.delete(req.params.id);
     if (!deleted.value) {
       return next(new ApiError(404, "Project not found"));
@@ -148,7 +164,9 @@ exports.delete = async (req, res, next) => {
 
 exports.deleteByProjectId = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const deleted = await projectService.deleteByProjectId(
       req.params.project_id
     );
@@ -165,7 +183,9 @@ exports.deleteByProjectId = async (req, res, next) => {
 
 exports.deleteAll = async (req, res, next) => {
   try {
-    const projectService = new ProjectService(MongoDB.client);
+    // const projectService = new ProjectService(MongoDB.client);
+    const projectService = new ProjectService();
+
     const deletedCount = await projectService.deleteAll();
     res.json({ message: `${deletedCount} projects deleted successfully` });
   } catch (error) {
