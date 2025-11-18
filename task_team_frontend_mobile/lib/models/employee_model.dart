@@ -2,8 +2,9 @@ class EmployeeModel {
   final String? id;
   final String employeeId;
   final String employeeName;
-  final String email;
-  final String phone;
+  final String employeePassword;
+  final String? email;
+  final String? phone;
   final String? image;
   final DateTime? birth;
   final String? address;
@@ -13,8 +14,9 @@ class EmployeeModel {
     this.id,
     required this.employeeId,
     required this.employeeName,
-    required this.email,
-    required this.phone,
+    required this.employeePassword,
+    this.email,
+    this.phone,
     this.image,
     this.birth,
     this.address,
@@ -30,6 +32,7 @@ class EmployeeModel {
       id: json['_id']?.toString(),
       employeeId: json['employee_id'].toString(),
       employeeName: json['employee_name'].toString(),
+      employeePassword: json['employee_password'],
       email: json['email'].toString(),
       phone: json['phone'].toString(),
       image: json['image'],
@@ -46,6 +49,7 @@ class EmployeeModel {
       '_id': id,
       'employee_id': employeeId,
       'employee_name': employeeName,
+      'employee_password': employeePassword,
       'email': email,
       'phone': phone,
       'image': image,
@@ -59,6 +63,7 @@ class EmployeeModel {
     String? id,
     String? employeeId,
     String? employeeName,
+    String? employeePassword,
     String? email,
     String? phone,
     String? image,
@@ -70,6 +75,7 @@ class EmployeeModel {
       id: id ?? this.id,
       employeeId: employeeId ?? this.employeeId,
       employeeName: employeeName ?? this.employeeName,
+      employeePassword: employeePassword ?? this.employeePassword,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       image: image ?? this.image,
