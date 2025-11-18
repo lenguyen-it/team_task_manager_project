@@ -152,4 +152,22 @@ class ApiConfig {
   static String get resgiter {
     return '$getUrl/auth/resgister';
   }
+
+  //==================================================
+
+  static String get getLogs {
+    return '$getUrl/activitylogs';
+  }
+
+  static String get getMyNotification {
+    return '$getUrl/notifications';
+  }
+
+  static String get markAllAsRead {
+    return '$getUrl/notifications/readall';
+  }
+
+  static String markAsRead(String id) {
+    return '$getUrl/notifications/$id/read';
+  }
 }
