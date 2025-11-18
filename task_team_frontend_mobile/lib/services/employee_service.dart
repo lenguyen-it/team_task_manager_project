@@ -70,8 +70,9 @@ class EmployeeService {
         // Thêm các field dữ liệu
         request.fields['employee_id'] = employee.employeeId;
         request.fields['employee_name'] = employee.employeeName;
-        request.fields['phone'] = employee.phone;
-        request.fields['email'] = employee.email;
+        request.fields['employee_password'] = employee.employeePassword;
+        request.fields['phone'] = employee.phone!;
+        request.fields['email'] = employee.email!;
         request.fields['role_id'] = employee.roleId;
 
         if (employee.address != null) {
@@ -148,8 +149,9 @@ class EmployeeService {
 
         request.fields['employee_id'] = employee.employeeId;
         request.fields['employee_name'] = employee.employeeName;
-        request.fields['phone'] = employee.phone;
-        request.fields['email'] = employee.email;
+        request.fields['employee_password'] = employee.employeePassword;
+        request.fields['phone'] = employee.phone!;
+        request.fields['email'] = employee.email!;
         request.fields['role_id'] = employee.roleId;
 
         if (employee.address != null) {
