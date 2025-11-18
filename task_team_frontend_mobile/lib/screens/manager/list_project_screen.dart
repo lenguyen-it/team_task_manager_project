@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/providers/project_provider.dart';
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
+import 'package:task_team_frontend_mobile/screens/manager/add_project_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/detail_project_screen.dart';
 
 import '../../models/employee_model.dart';
 
@@ -78,6 +80,7 @@ class _ListProjectScreenState extends State<ListProjectScreen> {
       orElse: () => EmployeeModel(
         employeeId: '',
         employeeName: 'Không tìm thấy',
+        employeePassword: '',
         email: '',
         phone: '',
         roleId: '',
@@ -88,25 +91,34 @@ class _ListProjectScreenState extends State<ListProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Danh sách Dự án'),
         centerTitle: true,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.refresh),
-        //     onPressed: () {
-        //       final token =
-        //           Provider.of<AuthProvider>(context, listen: false).token;
-        //       if (token != null) {
-        //         Provider.of<ProjectProvider>(context, listen: false)
-        //             .refresh(context);
-        //         Provider.of<EmployeeProvider>(context, listen: false)
-        //             .refresh(token);
-        //       }
-        //     },
-        //   ),
-        // ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_to_photos),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddProjectScreen(
+                    token: token!,
+                  ),
+                ),
+              );
+
+              if (result == true && mounted) {
+                final projectProvider =
+                    Provider.of<ProjectProvider>(context, listen: false);
+                projectProvider.getAllProject(token: token!);
+              }
+            },
+          ),
+        ],
       ),
       body: Consumer2<ProjectProvider, EmployeeProvider>(
         builder: (context, projectProvider, employeeProvider, child) {
@@ -185,94 +197,122 @@ class _ListProjectScreenState extends State<ListProjectScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Tên dự án
-                        Text(
-                          project.projectName,
-                          style:
-                              Theme.of(context).textTheme.titleLarge!.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailProjectScreen(
+                            token: Provider.of<AuthProvider>(context,
+                                    listen: false)
+                                .token!,
+                            projectId: project.projectId,
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                      );
+                      if (result == true) {
+                        final token =
+                            Provider.of<AuthProvider>(context, listen: false)
+                                .token;
+                        if (token != null) {
+                          Provider.of<ProjectProvider>(context, listen: false)
+                              .getAllProject(token: token);
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Tên dự án
+                          Text(
+                            project.projectName,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge!
+                                .copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
 
-                        // Người quản lý
-                        Row(
-                          children: [
-                            const Icon(Icons.person, color: Colors.blueGrey),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Quản lý: ',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade700),
-                            ),
-                            Expanded(
-                              child: employeeProvider.isLoading
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  : Text(
-                                      managerName,
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500),
-                                    ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Thời gian
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today,
-                                color: Colors.blueGrey),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Thời gian: ',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade700),
-                            ),
-                            Text(
-                              '${_formatDate(project.startDate)} - ${_formatDate(project.endDate)}',
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Trạng thái
-                        Row(
-                          children: [
-                            const Icon(Icons.flag, color: Colors.blueGrey),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Trạng thái: ',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade700),
-                            ),
-                            Chip(
-                              label: Text(
-                                _getStatusText(project.status),
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 13),
+                          // Người quản lý
+                          Row(
+                            children: [
+                              const Icon(Icons.person, color: Colors.blueGrey),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Quản lý: ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade700),
                               ),
-                              backgroundColor: _getStatusColor(project.status),
-                            ),
-                          ],
-                        ),
-                      ],
+                              Expanded(
+                                child: employeeProvider.isLoading
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : Text(
+                                        managerName,
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Thời gian
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today,
+                                  color: Colors.blueGrey),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Thời gian: ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade700),
+                              ),
+                              Text(
+                                '${_formatDate(project.startDate)} - ${_formatDate(project.endDate)}',
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Trạng thái
+                          Row(
+                            children: [
+                              const Icon(Icons.flag, color: Colors.blueGrey),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Trạng thái: ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade700),
+                              ),
+                              Chip(
+                                label: Text(
+                                  _getStatusText(project.status),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 13),
+                                ),
+                                backgroundColor:
+                                    _getStatusColor(project.status),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
