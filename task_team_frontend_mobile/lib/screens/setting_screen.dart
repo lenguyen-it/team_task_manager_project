@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:task_team_frontend_mobile/screens/activitylog_screen.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
 import 'package:task_team_frontend_mobile/screens/profile_screen.dart';
 import '../config/api_config.dart';
@@ -240,6 +241,20 @@ class _SettingScreenState extends State<SettingScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Chức năng đang phát triển')),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _buildSettingItem(
+                    icon: Icons.history,
+                    title: 'Nhật ký hoạt động',
+                    subtitle: 'Xem lịch sử hoạt động của bạn',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ActivityLogScreen(),
+                        ),
                       );
                     },
                   ),
