@@ -7,6 +7,7 @@ const RoleService = require("../services/role.service");
 const secret = process.env.JWT_SECRET || "your_jwt_secret_key";
 
 // Middleware xác thực JWT
+
 const verifyToken = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -16,7 +17,22 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, secret);
-    req.employee = decoded;
+
+    const employeeService = new EmployeeService();
+    const employee = await employeeService.findByEmployeeId(
+      decoded.employee_id
+    );
+
+    if (!employee) {
+      return next(new ApiError(404, "Employee not found"));
+    }
+
+    req.employee = {
+      employee_id: employee.employee_id,
+      employee_name: employee.employee_name,
+      role_id: employee.role_id,
+    };
+
     next();
   } catch (error) {
     return next(new ApiError(403, "Invalid token"));
