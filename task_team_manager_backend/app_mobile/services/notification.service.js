@@ -120,21 +120,34 @@ class NotificationService {
     };
   }
 
-  async markAsRead(notificationId, employee_id) {
+  async markAsRead(notificationId, requesterEmployeeId, requesterRole) {
+    const filter = { _id: notificationId };
+    if (requesterRole !== "admin") {
+      filter.employee_id = requesterEmployeeId;
+    }
+
     const result = await Notification.findOneAndUpdate(
-      { _id: notificationId, employee_id },
+      filter,
       { isRead: true, read_at: new Date() },
       { new: true }
     );
 
+    if (!result) {
+      throw new Error("Notification not found or unauthorized");
+    }
     return result;
   }
 
-  async markAllAsRead(employee_id) {
-    return await Notification.updateMany(
-      { employee_id, isRead: false },
-      { isRead: true, read_at: new Date() }
-    );
+  async markAllAsRead(requesterEmployeeId, requesterRole) {
+    const filter =
+      requesterRole === "admin"
+        ? { isRead: false }
+        : { employee_id: requesterEmployeeId, isRead: false };
+
+    return await Notification.updateMany(filter, {
+      isRead: true,
+      read_at: new Date(),
+    });
   }
 }
 

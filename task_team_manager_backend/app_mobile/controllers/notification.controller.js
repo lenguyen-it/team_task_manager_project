@@ -26,16 +26,27 @@ exports.getMyNotifications = async (req, res) => {
   }
 };
 
+// Kiểm tra role trong controller thay vì route
 exports.getAllNotifications = async (req, res) => {
   try {
+    if (!req.employee || !req.employee.employee_id) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Insufficient permissions",
+      });
+    }
+
     const notificationService = new NotificationService();
     const { page = 1, limit = 20, unread, employee_id } = req.query;
+
+    const targetEmployeeId =
+      req.employee.role_id === "admin" ? employee_id : req.employee.employee_id;
 
     const result = await notificationService.getAllNotifications({
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
       unreadOnly: unread === "true",
-      employee_id: employee_id,
+      employee_id: targetEmployeeId,
     });
 
     res.status(200).json({
@@ -51,21 +62,19 @@ exports.getAllNotifications = async (req, res) => {
   }
 };
 
+// markAsRead
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
     const employee_id = req.employee.employee_id;
+    const role_id = req.employee.role_id; 
 
     const notificationService = new NotificationService();
-
-    const notification = await notificationService.markAsRead(id, employee_id);
-
-    if (!notification) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy thông báo hoặc bạn không có quyền truy cập",
-      });
-    }
+    const notification = await notificationService.markAsRead(
+      id,
+      employee_id,
+      role_id
+    ); 
 
     res.status(200).json({
       success: true,
@@ -73,20 +82,21 @@ exports.markAsRead = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in markAsRead:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: error.message || "Lỗi khi đánh dấu đã đọc",
     });
   }
 };
 
+// markAllAsRead
 exports.markAllAsRead = async (req, res) => {
   try {
     const employee_id = req.employee.employee_id;
+    const role_id = req.employee.role_id; 
 
     const notificationService = new NotificationService();
-
-    await notificationService.markAllAsRead(employee_id);
+    await notificationService.markAllAsRead(employee_id, role_id); 
 
     res.status(200).json({
       success: true,
@@ -94,7 +104,7 @@ exports.markAllAsRead = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in markAllAsRead:", error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: error.message || "Lỗi khi đánh dấu tất cả đã đọc",
     });
