@@ -23,13 +23,27 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      // Task notifications
       "task_assigned",
       "task_updated",
+      "task_completed",
+      "task_confirmed",
+      "task_comment",
       "task_deadline_near",
       "task_overdue",
-      "task_confirmed",
-      "task_completed",
-      "task_comment",
+      // Role notifications
+      "role_update",
+      "role_assigned",
+      // Project notifications
+      "project_assigned",
+      "project_updated",
+      "project_completed",
+      "project_deadline_near",
+      // Employee notifications
+      "employee_created",
+      "employee_updated",
+      "employee_role_changed",
+      "employee_deleted",
     ],
   },
 
