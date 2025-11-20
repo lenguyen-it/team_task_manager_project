@@ -2,6 +2,8 @@ const ActivityLogService = require("../services/activitylog.service");
 
 exports.getLogs = async (req, res) => {
   try {
+    const activityLogService = new ActivityLogService();
+
     const {
       page = 1,
       limit = 20,
@@ -16,7 +18,7 @@ exports.getLogs = async (req, res) => {
     if (employee_id) filter.employee_id = employee_id;
     if (target_type) filter.target_type = target_type;
 
-    const result = await ActivityLogService.getLogs(
+    const result = await activityLogService.getLogs(
       filter,
       parseInt(page, 10),
       parseInt(limit, 10)
