@@ -159,8 +159,12 @@ class ApiConfig {
 
   //==================================================
 
-  static String get getLogs {
+  static String get getAllActivityLogs {
     return '$getUrl/activitylogs';
+  }
+
+  static String get getMyLogs {
+    return '$getUrl/activitylogs/me';
   }
 
   static String get getAllNotifications {
