@@ -26,6 +26,25 @@ class AuthService {
     }
   }
 
+  //Đăng xuất
+  Future<void> logout(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.logout),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Logout failed');
+      }
+    } catch (e) {
+      throw Exception('Error during logout: ${e.toString()}');
+    }
+  }
+
   // Đăng ký
   Future<RegisterResponse> register(RegisterRequest request) async {
     try {

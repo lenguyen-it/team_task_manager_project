@@ -169,12 +169,25 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Đăng xuất
+  // Provider
   Future<void> logout() async {
-    await _storageService.clearAll();
-    _token = null;
-    _currentEmployee = null;
-    _status = AuthStatus.unauthenticated;
-    notifyListeners();
+    try {
+      if (_token != null) {
+        await _authService.logout(_token!);
+      }
+
+      await _storageService.clearAll();
+      _token = null;
+      _currentEmployee = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    } catch (e) {
+      await _storageService.clearAll();
+      _token = null;
+      _currentEmployee = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    }
   }
 
   // Kiểm tra quyền

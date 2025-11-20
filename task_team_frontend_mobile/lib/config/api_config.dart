@@ -149,6 +149,10 @@ class ApiConfig {
     return '$getUrl/auth/login';
   }
 
+  static String get logout {
+    return '$getUrl/auth/logout';
+  }
+
   static String get resgiter {
     return '$getUrl/auth/resgister';
   }
@@ -159,8 +163,12 @@ class ApiConfig {
     return '$getUrl/activitylogs';
   }
 
-  static String get getMyNotification {
+  static String get getAllNotifications {
     return '$getUrl/notifications';
+  }
+
+  static String get getMyNotifications {
+    return '$getUrl/notifications/my';
   }
 
   static String get markAllAsRead {
