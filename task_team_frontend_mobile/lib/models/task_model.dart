@@ -6,7 +6,7 @@ enum TaskStatus {
   overdue,
   done,
   pause,
-  wait;
+  waitConfirm;
 
   String get value => _statusToString(this);
 
@@ -17,7 +17,7 @@ enum TaskStatus {
       'overdue' => TaskStatus.overdue,
       'done' => TaskStatus.done,
       'pause' => TaskStatus.pause,
-      'wait' => TaskStatus.wait,
+      'wait_comfirm' => TaskStatus.waitConfirm,
       _ => TaskStatus.newTask,
     };
   }
@@ -29,7 +29,7 @@ enum TaskStatus {
       TaskStatus.overdue => 'overdue',
       TaskStatus.done => 'done',
       TaskStatus.pause => 'pause',
-      TaskStatus.wait => 'wait',
+      TaskStatus.waitConfirm => 'wait_comfirm',
     };
   }
 }
@@ -125,7 +125,7 @@ class TaskModel {
     // Giữ nguyên status nếu là done, pause, hoặc wait
     if (status == TaskStatus.done ||
         status == TaskStatus.pause ||
-        status == TaskStatus.wait) {
+        status == TaskStatus.waitConfirm) {
       return this;
     }
 
@@ -160,7 +160,7 @@ class TaskModel {
               ?.map((e) => Attachment.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      projectName: json['projectName'],
+      projectName: json['project_name'],
     );
   }
 

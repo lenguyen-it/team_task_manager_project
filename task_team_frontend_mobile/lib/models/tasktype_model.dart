@@ -45,6 +45,6 @@ class TasktypeModel {
 
   @override
   String toString() {
-    return 'RoleModel(id: $id, tasktypeId: $tasktypeId, tasktypeName: $tasktypeName, description: $description)';
+    return 'TaskTypeModel(id: $id, tasktypeId: $tasktypeId, tasktypeName: $tasktypeName, description: $description)';
   }
 }

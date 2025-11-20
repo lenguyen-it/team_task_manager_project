@@ -1,6 +1,7 @@
 class ProjectModel {
   final String? id;
   final String projectId;
+  final String? parentProjectId;
   final String projectName;
   final String projectManagerId;
   final String? description;
@@ -11,6 +12,7 @@ class ProjectModel {
   ProjectModel({
     this.id,
     required this.projectId,
+    this.parentProjectId,
     required this.projectName,
     required this.projectManagerId,
     this.description,
@@ -22,6 +24,7 @@ class ProjectModel {
   ProjectModel copyWith({
     String? id,
     String? projectId,
+    String? parentProjectId,
     String? projectName,
     String? projectManagerId,
     String? description,
@@ -33,6 +36,7 @@ class ProjectModel {
       id: id ?? this.id,
       projectId: projectId ?? this.projectId,
       projectName: projectName ?? this.projectName,
+      parentProjectId: parentProjectId ?? this.parentProjectId,
       projectManagerId: projectManagerId ?? this.projectManagerId,
       description: description ?? this.description,
       startDate: startDate ?? this.startDate,
@@ -45,6 +49,7 @@ class ProjectModel {
     return ProjectModel(
       id: json['_id']?.toString(),
       projectId: json['project_id'].toString(),
+      parentProjectId: json['parent_project_id'].toString(),
       projectName: json['project_name'].toString(),
       projectManagerId: json['project_manager_id'].toString(),
       description: json['description'] as String? ?? 'Không có mô tả',
@@ -61,6 +66,7 @@ class ProjectModel {
     return {
       '_id': id,
       'project_id': projectId,
+      'parent_project_id': parentProjectId,
       'project_name': projectName,
       'project_manager_id': projectManagerId,
       'description': description,
@@ -72,7 +78,8 @@ class ProjectModel {
 
   @override
   String toString() {
-    return 'ProjectModel(id: $id, projectId: $projectId, projectName: $projectName, projectManagerId: $projectManagerId, '
+    return 'ProjectModel(id: $id, projectId: $projectId, parentProjectId: $parentProjectId, '
+        'projectName: $projectName, projectManagerId: $projectManagerId, '
         'description: $description, startDate: $startDate, endDate: $endDate, status: $status)';
   }
 }
