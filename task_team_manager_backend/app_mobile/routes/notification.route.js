@@ -4,14 +4,7 @@ const { verifyToken, authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
-router
-  .route("/")
-  .get(
-    verifyToken,
-    authorize(["admin"]),
-    NotificationController.getAllNotifications
-  );
-
+// ✅ FIX: Put specific routes BEFORE generic ones
 router
   .route("/readall")
   .patch(verifyToken, NotificationController.markAllAsRead);
@@ -19,5 +12,13 @@ router
 router.route("/:id/read").patch(verifyToken, NotificationController.markAsRead);
 
 router.route("/my").get(verifyToken, NotificationController.getMyNotifications);
+
+router
+  .route("/")
+  .get(
+    verifyToken,
+    authorize(["admin"]),
+    NotificationController.getAllNotifications
+  );
 
 module.exports = router;
