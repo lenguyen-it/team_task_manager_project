@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:task_team_frontend_mobile/providers/activitylog_provider.dart';
 
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => ActivitylogProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
