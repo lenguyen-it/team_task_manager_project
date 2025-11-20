@@ -3,6 +3,7 @@ const path = require("path");
 const cors = require("cors");
 
 const ApiError = require("./app_mobile/api-error");
+const notificationScheduler = require("./app_mobile/services/notification.scheduler.service");
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.use("/api/roles", RoleRoute);
 app.use("/api/auth", AuthRoute);
 app.use("/api/notifications", NotificationRoute);
 app.use("/api/activitylogs", ActivityLogRoute);
+
+notificationScheduler.start();
 
 app.use((req, res, next) => {
   return next(new ApiError(404, "Resource not found"));
