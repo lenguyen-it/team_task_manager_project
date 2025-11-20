@@ -166,7 +166,7 @@ class StatsSectionWidget extends StatelessWidget {
   final int total;
   final int newTasks;
   final int inProgress;
-  final int wait;
+  final int waitConfirm;
   final int done;
   final int overdue;
 
@@ -175,7 +175,7 @@ class StatsSectionWidget extends StatelessWidget {
     required this.total,
     required this.newTasks,
     required this.inProgress,
-    required this.wait,
+    required this.waitConfirm,
     required this.done,
     required this.overdue,
   });
@@ -195,7 +195,7 @@ class StatsSectionWidget extends StatelessWidget {
           _StatCard('Toàn bộ công việc', total, const Color(0xFF6EC1E4)),
           _StatCard('Công việc mới', newTasks, const Color(0xFFB2EBF2)),
           _StatCard('Đang làm', inProgress, const Color(0xFFFFD54F)),
-          _StatCard('Chờ xác nhận', wait, const Color(0xFFB0BEC5)),
+          _StatCard('Chờ xác nhận', waitConfirm, const Color(0xFFB0BEC5)),
           _StatCard('Hoàn thành', done, const Color(0xFF81C784)),
           _StatCard('Quá hạn', overdue, const Color(0xFFE57373)),
         ],

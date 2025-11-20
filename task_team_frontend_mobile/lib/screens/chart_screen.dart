@@ -676,7 +676,7 @@ class _ChartScreenState extends State<ChartScreen> {
               ),
               content: SizedBox(
                 width: 300,
-                height: 230, // tăng chiều cao để thêm dòng tháng/năm hiện tại
+                height: 230,
                 child: Column(
                   children: [
                     // --- Thanh điều hướng nhóm năm ---

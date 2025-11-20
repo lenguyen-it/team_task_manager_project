@@ -1417,7 +1417,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
     final now = DateTime.now();
     final upcomingTasks = tasks.where((t) {
       if (t.status == TaskStatus.done ||
-          t.status == TaskStatus.wait ||
+          t.status == TaskStatus.waitConfirm ||
           t.status == TaskStatus.pause) {
         return false;
       }
@@ -1749,7 +1749,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
 
   Color _getStatusColor(TaskStatus status) {
     switch (status) {
-      case TaskStatus.wait:
+      case TaskStatus.waitConfirm:
         return Colors.grey;
       case TaskStatus.inProgress:
         return Colors.orangeAccent;
@@ -1766,7 +1766,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
 
   String _getStatusText(TaskStatus status) {
     switch (status) {
-      case TaskStatus.wait:
+      case TaskStatus.waitConfirm:
         return 'Chờ xác nhận';
       case TaskStatus.inProgress:
         return 'Đang làm';

@@ -5,18 +5,13 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:task_team_frontend_mobile/providers/auth_provider.dart';
 import 'package:task_team_frontend_mobile/providers/employee_provider.dart';
+import 'package:task_team_frontend_mobile/providers/notification_provider.dart';
 import 'package:task_team_frontend_mobile/providers/project_provider.dart';
 
 import 'package:task_team_frontend_mobile/providers/role_provider.dart';
 import 'package:task_team_frontend_mobile/providers/task_provider.dart';
 import 'package:task_team_frontend_mobile/providers/tasktype_provider.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
-
-import 'package:task_team_frontend_mobile/screens/employee_screen.dart';
-import 'package:task_team_frontend_mobile/screens/project_screen.dart';
-import 'package:task_team_frontend_mobile/screens/role_screen.dart';
-import 'package:task_team_frontend_mobile/screens/task_screen.dart';
-import 'package:task_team_frontend_mobile/screens/tasktype_screen.dart';
 
 Future<void> main() async {
   await dotenv.load();
@@ -37,6 +32,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TasktypeProvider()),
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -46,11 +42,6 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: const LoginScreen(),
-        // const RoleScreen(),
-        // const ProjectScreen(),
-        // const TaskScreen(),
-        // const TasktypeScreen(),
-        // const EmployeeScreen(),
       ),
     );
   }

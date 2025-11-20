@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:task_team_frontend_mobile/screens/notification_screen.dart';
 
 import '../models/task_model.dart';
 import '../providers/auth_provider.dart';
@@ -158,7 +159,8 @@ class _AllTaskScreenState extends State<AllTaskScreen> {
         TaskHelpers.countTasksByStatus(allTasks, TaskStatus.newTask);
     final inProgress =
         TaskHelpers.countTasksByStatus(allTasks, TaskStatus.inProgress);
-    final wait = TaskHelpers.countTasksByStatus(allTasks, TaskStatus.wait);
+    final waitConfirm =
+        TaskHelpers.countTasksByStatus(allTasks, TaskStatus.waitConfirm);
     final done = TaskHelpers.countTasksByStatus(allTasks, TaskStatus.done);
     final overdue =
         TaskHelpers.countTasksByStatus(allTasks, TaskStatus.overdue);
@@ -187,7 +189,14 @@ class _AllTaskScreenState extends State<AllTaskScreen> {
                   IconButton(
                     icon: const Icon(Icons.notifications_outlined,
                         color: Colors.black),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -217,7 +226,7 @@ class _AllTaskScreenState extends State<AllTaskScreen> {
               total: total,
               newTasks: newTasks,
               inProgress: inProgress,
-              wait: wait,
+              waitConfirm: waitConfirm,
               done: done,
               overdue: overdue,
             ),

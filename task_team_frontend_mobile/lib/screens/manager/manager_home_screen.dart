@@ -189,8 +189,8 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
               TaskHelpers.countTasksByStatus(allTasks, TaskStatus.newTask);
           final inProgress =
               TaskHelpers.countTasksByStatus(allTasks, TaskStatus.inProgress);
-          final wait =
-              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.wait);
+          final waitConfirm =
+              TaskHelpers.countTasksByStatus(allTasks, TaskStatus.waitConfirm);
           final done =
               TaskHelpers.countTasksByStatus(allTasks, TaskStatus.done);
           final overdue =
@@ -237,7 +237,7 @@ class _ManagerHomeScreenState extends State<ManagerHomeScreen> {
                   total: total,
                   newTasks: newTasks,
                   inProgress: inProgress,
-                  wait: wait,
+                  waitConfirm: waitConfirm,
                   done: done,
                   overdue: overdue,
                 ),

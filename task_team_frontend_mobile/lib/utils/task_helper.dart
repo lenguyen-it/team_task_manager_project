@@ -8,7 +8,7 @@ class TaskHelpers {
     return switch (status) {
       TaskStatus.newTask => 'Công việc mới',
       TaskStatus.inProgress => 'Đang làm',
-      TaskStatus.wait => 'Chờ xác nhận',
+      TaskStatus.waitConfirm => 'Chờ xác nhận',
       TaskStatus.done => 'Hoàn thành',
       TaskStatus.overdue => 'Quá hạn',
       TaskStatus.pause => 'Tạm dừng',
@@ -20,7 +20,7 @@ class TaskHelpers {
     return switch (vi) {
       'Công việc mới' => TaskStatus.newTask,
       'Đang làm' => TaskStatus.inProgress,
-      'Chờ xác nhận' => TaskStatus.wait,
+      'Chờ xác nhận' => TaskStatus.waitConfirm,
       'Hoàn thành' => TaskStatus.done,
       'Quá hạn' => TaskStatus.overdue,
       'Tạm dừng' => TaskStatus.pause,
@@ -53,7 +53,7 @@ class TaskHelpers {
     return switch (status) {
       TaskStatus.done => Colors.green,
       TaskStatus.inProgress => Colors.orange,
-      TaskStatus.wait => Colors.grey.shade500,
+      TaskStatus.waitConfirm => Colors.grey.shade500,
       TaskStatus.newTask => Colors.cyan,
       TaskStatus.pause => Colors.redAccent,
       TaskStatus.overdue => Colors.red,
@@ -96,14 +96,14 @@ class TaskHelpers {
         .where((t) =>
             t.status == TaskStatus.pause ||
             t.status == TaskStatus.done ||
-            t.status == TaskStatus.wait)
+            t.status == TaskStatus.waitConfirm)
         .toList();
 
     final sortableTasks = tasks
         .where((t) =>
             t.status != TaskStatus.pause &&
             t.status != TaskStatus.done &&
-            t.status != TaskStatus.wait)
+            t.status != TaskStatus.waitConfirm)
         .toList();
 
     // Sắp xếp các task cần sắp xếp theo độ ưu tiên: high -> normal -> low

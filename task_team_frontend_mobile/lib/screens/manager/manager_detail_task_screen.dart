@@ -48,7 +48,7 @@ class _ManagerDetailTaskScreenState extends State<ManagerDetailTaskScreen> {
   TaskModel? _currentTask;
 
   final List<Map<String, String>> _statusOptions = [
-    {'value': 'wait', 'label': 'Chờ xác nhận'},
+    {'value': 'wait_confirm', 'label': 'Chờ xác nhận'},
     {'value': 'in_progress', 'label': 'Đang thực hiện'},
     {'value': 'done', 'label': 'Hoàn thành'},
     {'value': 'pause', 'label': 'Tạm dừng'},
