@@ -17,7 +17,7 @@ enum TaskStatus {
       'overdue' => TaskStatus.overdue,
       'done' => TaskStatus.done,
       'pause' => TaskStatus.pause,
-      'wait_comfirm' => TaskStatus.waitConfirm,
+      'wait_confirm' => TaskStatus.waitConfirm,
       _ => TaskStatus.newTask,
     };
   }
@@ -29,7 +29,7 @@ enum TaskStatus {
       TaskStatus.overdue => 'overdue',
       TaskStatus.done => 'done',
       TaskStatus.pause => 'pause',
-      TaskStatus.waitConfirm => 'wait_comfirm',
+      TaskStatus.waitConfirm => 'wait_confirm',
     };
   }
 }
