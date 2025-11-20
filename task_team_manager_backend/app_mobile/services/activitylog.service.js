@@ -11,7 +11,7 @@ class ActivityLogService {
     description = null,
     status = "success",
   }) {
-    const log = new this.ActivityLog({
+    const log = new ActivityLog({
       employee_id,
       role_id,
       action,
