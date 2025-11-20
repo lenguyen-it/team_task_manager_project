@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_team_frontend_mobile/screens/manager/list_employee_screen.dart';
 import 'package:task_team_frontend_mobile/screens/manager/list_project_screen.dart';
+import 'package:task_team_frontend_mobile/screens/notification_screen.dart';
 
 class ListScreen extends StatefulWidget {
   const ListScreen({super.key});
@@ -31,7 +32,14 @@ class _ListScreenState extends State<ListScreen> {
             IconButton(
               icon:
                   const Icon(Icons.notifications_outlined, color: Colors.black),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),
