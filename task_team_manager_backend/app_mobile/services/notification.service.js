@@ -31,8 +31,20 @@ class NotificationService {
     if (unreadOnly) filter.isRead = false;
 
     const notifications = await Notification.find(filter)
-      .populate("actor_id", "name avatar")
-      .populate("task_id", "title status")
+      .populate({
+        path: "actor_id",
+        foreignField: "employee_id",
+        localField: "actor_id",
+        select: "employee_name",
+        model: "Employee",
+      })
+      .populate({
+        path: "task_id",
+        foreignField: "task_id",
+        localField: "task_id",
+        select: "task_name status",
+        model: "Task",
+      })
       .sort({ create_at: -1 })
       .skip(skip)
       .limit(limit)
@@ -47,6 +59,58 @@ class NotificationService {
     return {
       data: notifications,
       unreadCount,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getAllNotifications({
+    page = 1,
+    limit = 20,
+    unreadOnly = false,
+    employee_id = null,
+  }) {
+    const skip = (page - 1) * limit;
+    const filter = {};
+
+    if (unreadOnly) filter.isRead = false;
+    if (employee_id) filter.employee_id = employee_id;
+
+    const notifications = await Notification.find(filter)
+      .populate({
+        path: "employee_id",
+        foreignField: "employee_id",
+        localField: "employee_id",
+        select: "employee_name email",
+        model: "Employee",
+      })
+      .populate({
+        path: "actor_id",
+        foreignField: "employee_id",
+        localField: "actor_id",
+        select: "employee_name",
+        model: "Employee",
+      })
+      .populate({
+        path: "task_id",
+        foreignField: "task_id",
+        localField: "task_id",
+        select: "task_name status",
+        model: "Task",
+      })
+      .sort({ create_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Notification.countDocuments(filter);
+
+    return {
+      data: notifications,
       pagination: {
         page,
         limit,
