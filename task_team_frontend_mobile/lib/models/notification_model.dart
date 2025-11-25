@@ -17,7 +17,6 @@ class NotificationModel {
     this.metadata,
   });
 
-  // FIX: Đảm bảo fromJson xử lý đúng
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       id: json['_id'] ?? json['id'],

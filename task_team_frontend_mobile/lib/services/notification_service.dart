@@ -24,33 +24,61 @@ class NotificationService {
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
 
-        List<dynamic> notificationsList;
+        List<dynamic> notificationsList = [];
         int totalCount = 0;
         int totalPages = 1;
+        int currentPage = page;
 
-        if (jsonData is List) {
+        // Parse response theo cấu trúc từ backend
+        if (jsonData is Map<String, dynamic>) {
+          // ✅ Ưu tiên: Backend trả về { success: true, data: [...], pagination: {...} }
+          if (jsonData.containsKey('pagination')) {
+            notificationsList = jsonData['data'] as List? ?? [];
+            final pagination = jsonData['pagination'] as Map<String, dynamic>;
+            totalCount = pagination['total'] as int? ?? 0;
+            totalPages = pagination['pages'] as int? ?? 1;
+            currentPage = pagination['page'] as int? ?? page;
+          }
+          // Format mới: { success: true, data: [...], totalCount: X, totalPages: Y, currentPage: Z }
+          else if (jsonData.containsKey('data') &&
+              jsonData.containsKey('totalCount')) {
+            notificationsList = jsonData['data'] as List? ?? [];
+            totalCount = jsonData['totalCount'] as int? ?? 0;
+            totalPages = jsonData['totalPages'] as int? ?? 1;
+            currentPage = jsonData['currentPage'] as int? ?? page;
+          }
+          // Fallback cho các format khác
+          else if (jsonData.containsKey('notifications')) {
+            notificationsList = jsonData['notifications'] as List? ?? [];
+            totalCount = jsonData['total'] as int? ?? notificationsList.length;
+            totalPages =
+                jsonData['pages'] as int? ?? (totalCount / limit).ceil();
+            currentPage = jsonData['page'] as int? ?? page;
+          } else if (jsonData.containsKey('results')) {
+            notificationsList = jsonData['results'] as List? ?? [];
+            totalCount = jsonData['count'] as int? ?? notificationsList.length;
+            totalPages =
+                jsonData['pages'] as int? ?? (totalCount / limit).ceil();
+            currentPage = jsonData['page'] as int? ?? page;
+          }
+          // Nếu không có key cụ thể, có thể data nằm ngay trong jsonData
+          else {
+            notificationsList = [];
+            totalCount = 0;
+            totalPages = 1;
+          }
+        }
+        // Nếu backend trả về array trực tiếp
+        else if (jsonData is List) {
           notificationsList = jsonData;
           totalCount = notificationsList.length;
           totalPages = (totalCount / limit).ceil();
-        } else if (jsonData is Map<String, dynamic>) {
-          if (jsonData.containsKey('data')) {
-            notificationsList = jsonData['data'] as List;
-            totalCount = jsonData['totalCount'] ?? notificationsList.length;
-            totalPages = jsonData['totalPages'] ?? (totalCount / limit).ceil();
-          } else if (jsonData.containsKey('notifications')) {
-            notificationsList = jsonData['notifications'] as List;
-            totalCount = jsonData['total'] ?? notificationsList.length;
-            totalPages = jsonData['pages'] ?? (totalCount / limit).ceil();
-          } else if (jsonData.containsKey('results')) {
-            notificationsList = jsonData['results'] as List;
-            totalCount = jsonData['count'] ?? notificationsList.length;
-            totalPages = jsonData['pages'] ?? (totalCount / limit).ceil();
-          } else {
-            throw Exception('Response does not contain notifications array');
-          }
-        } else {
-          throw Exception('Invalid response format');
+          currentPage = page;
         }
+
+        print(
+            '📊 Parsed - Total: $totalCount, Pages: $totalPages, Current: $currentPage');
+        print('📋 Notifications count: ${notificationsList.length}');
 
         return {
           'notifications': notificationsList
@@ -58,7 +86,7 @@ class NotificationService {
               .toList(),
           'totalCount': totalCount,
           'totalPages': totalPages,
-          'currentPage': page,
+          'currentPage': currentPage,
         };
       } else {
         throw Exception('Failed to load notifications: ${response.statusCode}');
@@ -90,33 +118,59 @@ class NotificationService {
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
 
-        List<dynamic> notificationsList;
+        List<dynamic> notificationsList = [];
         int totalCount = 0;
         int totalPages = 1;
+        int currentPage = page;
 
-        if (jsonData is List) {
+        // Parse response theo cấu trúc từ backend
+        if (jsonData is Map<String, dynamic>) {
+          // ✅ Ưu tiên: Backend trả về { success: true, data: [...], pagination: {...} }
+          if (jsonData.containsKey('pagination')) {
+            notificationsList = jsonData['data'] as List? ?? [];
+            final pagination = jsonData['pagination'] as Map<String, dynamic>;
+            totalCount = pagination['total'] as int? ?? 0;
+            totalPages = pagination['pages'] as int? ?? 1;
+            currentPage = pagination['page'] as int? ?? page;
+          }
+          // Format mới: { success: true, data: [...], totalCount: X, totalPages: Y, currentPage: Z }
+          else if (jsonData.containsKey('data') &&
+              jsonData.containsKey('totalCount')) {
+            notificationsList = jsonData['data'] as List? ?? [];
+            totalCount = jsonData['totalCount'] as int? ?? 0;
+            totalPages = jsonData['totalPages'] as int? ?? 1;
+            currentPage = jsonData['currentPage'] as int? ?? page;
+          }
+          // Fallback cho các format khác
+          else if (jsonData.containsKey('notifications')) {
+            notificationsList = jsonData['notifications'] as List? ?? [];
+            totalCount = jsonData['total'] as int? ?? notificationsList.length;
+            totalPages =
+                jsonData['pages'] as int? ?? (totalCount / limit).ceil();
+            currentPage = jsonData['page'] as int? ?? page;
+          } else if (jsonData.containsKey('results')) {
+            notificationsList = jsonData['results'] as List? ?? [];
+            totalCount = jsonData['count'] as int? ?? notificationsList.length;
+            totalPages =
+                jsonData['pages'] as int? ?? (totalCount / limit).ceil();
+            currentPage = jsonData['page'] as int? ?? page;
+          } else {
+            notificationsList = [];
+            totalCount = 0;
+            totalPages = 1;
+          }
+        }
+        // Nếu backend trả về array trực tiếp
+        else if (jsonData is List) {
           notificationsList = jsonData;
           totalCount = notificationsList.length;
           totalPages = (totalCount / limit).ceil();
-        } else if (jsonData is Map<String, dynamic>) {
-          if (jsonData.containsKey('data')) {
-            notificationsList = jsonData['data'] as List;
-            totalCount = jsonData['totalCount'] ?? notificationsList.length;
-            totalPages = jsonData['totalPages'] ?? (totalCount / limit).ceil();
-          } else if (jsonData.containsKey('notifications')) {
-            notificationsList = jsonData['notifications'] as List;
-            totalCount = jsonData['total'] ?? notificationsList.length;
-            totalPages = jsonData['pages'] ?? (totalCount / limit).ceil();
-          } else if (jsonData.containsKey('results')) {
-            notificationsList = jsonData['results'] as List;
-            totalCount = jsonData['count'] ?? notificationsList.length;
-            totalPages = jsonData['pages'] ?? (totalCount / limit).ceil();
-          } else {
-            throw Exception('Response does not contain notifications array');
-          }
-        } else {
-          throw Exception('Invalid response format');
+          currentPage = page;
         }
+
+        print(
+            '📊 Parsed - Total: $totalCount, Pages: $totalPages, Current: $currentPage');
+        print('📋 Notifications count: ${notificationsList.length}');
 
         return {
           'notifications': notificationsList
@@ -124,7 +178,7 @@ class NotificationService {
               .toList(),
           'totalCount': totalCount,
           'totalPages': totalPages,
-          'currentPage': page,
+          'currentPage': currentPage,
         };
       } else {
         throw Exception('Failed to load notifications: ${response.statusCode}');
@@ -168,7 +222,6 @@ class NotificationService {
 
   Future<bool> markAllAsRead(String token) async {
     try {
-      // ✅ FIX: Log the full URL
       final url = Uri.parse(ApiConfig.markAllAsRead);
       print('Mark all as read URL: $url');
 
@@ -178,7 +231,6 @@ class NotificationService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        // ✅ FIX: Send body even if empty
         body: jsonEncode({}),
       );
 
