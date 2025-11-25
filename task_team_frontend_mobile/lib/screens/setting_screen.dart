@@ -232,6 +232,26 @@ class _SettingScreenState extends State<SettingScreen> {
                       );
                     },
                   ),
+
+                  if (employee?.roleId == 'admin' ||
+                      employee?.roleId == 'manager')
+                    Column(
+                      children: [
+                        const Divider(height: 1),
+                        _buildSettingItem(
+                          icon: Icons.check_circle_outline,
+                          title: 'Duyệt công việc',
+                          subtitle: 'Xem và duyệt các công việc chờ phê duyệt',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Chức năng đang phát triển')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
                   const Divider(height: 1),
                   _buildSettingItem(
                     icon: Icons.language_outlined,
