@@ -1,6 +1,10 @@
 const ApiError = require("../api-error");
 const TaskService = require("../services/task.service");
 const NotificationHelper = require("../helpers/notification.helper");
+const EmployeeService = require("../services/employee.service");
+const SendEmailService = require("../services/sendmail.service");
+const ProjectService = require("../services/project.service");
+const TaskTypeService = require("../services/tasktype.service");
 const activityLogger = require("../helpers/activitylog.helper");
 
 exports.create = async (req, res, next) => {
@@ -24,14 +28,82 @@ exports.create = async (req, res, next) => {
       }
     );
 
-    // Gửi thông báo khi tạo task
+    let emailSentCount = 0;
+    let notificationSentTo = [];
+
+    // Gửi thông báo và email khi tạo task
     if (createdTask.assigned_to?.length > 0) {
+      // Gửi thông báo trong app
       await NotificationHelper.sendTaskNotification({
         type: "task_assigned",
         task: createdTask,
         actor: NotificationHelper.getActor(req),
         recipients: createdTask.assigned_to,
       });
+
+      // Lấy thông tin chi tiết để gửi email
+      try {
+        const sendEmailService = new SendEmailService();
+        const employeeService = new EmployeeService();
+        const projectService = new ProjectService();
+        const taskTypeService = new TaskTypeService();
+
+        // Lấy thông tin assignees
+        const assignees = await Promise.all(
+          createdTask.assigned_to.map(async (employeeId) => {
+            try {
+              return await employeeService.findByEmployeeId(employeeId);
+            } catch (error) {
+              console.error(`Error fetching employee ${employeeId}:`, error);
+              return null;
+            }
+          })
+        );
+
+        // Lọc bỏ các assignees null và có email
+        const validAssignees = assignees.filter((a) => a && a.email);
+
+        if (validAssignees.length > 0) {
+          // Lấy thông tin project và task type
+          let projectName = createdTask.project_id;
+          let taskTypeName = createdTask.task_type_id;
+
+          try {
+            const project = await projectService.findByProjectId(
+              createdTask.project_id
+            );
+            projectName = project?.project_name || createdTask.project_id;
+          } catch (error) {
+            console.error("Error fetching project:", error);
+          }
+
+          try {
+            const taskType = await taskTypeService.findByTaskTypeId(
+              createdTask.task_type_id
+            );
+            taskTypeName = taskType?.task_type_name || createdTask.task_type_id;
+          } catch (error) {
+            console.error("Error fetching task type:", error);
+          }
+
+          // Tạo object task với tên đầy đủ
+          const taskWithNames = {
+            ...createdTask.toObject(),
+            project_name: projectName,
+            task_type_name: taskTypeName,
+          };
+
+          // Gửi email
+          const emailResult = await sendEmailService.sendTaskAssignmentEmail(
+            taskWithNames,
+            validAssignees
+          );
+          emailSentCount = emailResult.successful;
+        }
+      } catch (error) {
+        console.error("Error sending task assignment emails:", error);
+        // Không throw error, chỉ log để không ảnh hưởng đến việc tạo task
+      }
 
       // Log assign task cho từng người được giao
       for (const assignee_id of createdTask.assigned_to) {
@@ -42,13 +114,16 @@ exports.create = async (req, res, next) => {
           assignee_id
         );
       }
+
+      notificationSentTo = createdTask.assigned_to;
     }
 
     return res.status(201).json({
       success: true,
       message: "Tạo nhiệm vụ thành công",
       data: createdTask,
-      notification_sent_to: createdTask.assigned_to || [],
+      notification_sent_to: notificationSentTo,
+      email_sent_count: emailSentCount,
     });
   } catch (error) {
     console.error("Error creating task:", error);
