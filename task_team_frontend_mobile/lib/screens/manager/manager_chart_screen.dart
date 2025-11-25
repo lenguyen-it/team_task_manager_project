@@ -1570,9 +1570,12 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
   // ==================== 5. WORKLOAD SECTION ====================
   Widget _buildWorkLoadSection(
       List<TaskModel> tasks, List<EmployeeModel> employees) {
-    final staffEmployees =
-        employees.where((emp) => emp.roleId.toLowerCase() == 'staff').toList();
+    // LỌC BỎ ADMIN hoàn toàn khỏi danh sách hiển thị
+    final staffEmployees = employees
+        .where((emp) => (emp.roleId.toLowerCase() != 'admin'))
+        .toList();
 
+    // Đếm số task của từng nhân viên
     final Map<String, int> employeeTaskCount = {};
 
     for (var task in tasks) {
@@ -1581,6 +1584,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
       }
     }
 
+    // Tạo danh sách kèm số task + sắp xếp giảm dần
     final sortedEmployees = staffEmployees.map((emp) {
       return {
         'employee': emp,
@@ -1590,6 +1594,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
       ..sort(
           (a, b) => (b['taskCount'] as int).compareTo(a['taskCount'] as int));
 
+    // Lọc theo tìm kiếm
     final filteredEmployees = _searchQuery.isEmpty
         ? sortedEmployees
         : sortedEmployees.where((item) {
@@ -1599,7 +1604,8 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
                 .contains(_searchQuery.toLowerCase());
           }).toList();
 
-    final displayEmployees = filteredEmployees.take(5).toList();
+    // Chỉ hiển thị tối đa 5 người
+    final displayEmployees = filteredEmployees.take(10).toList();
 
     return Container(
       color: Colors.white,
@@ -1617,6 +1623,8 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
             style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 16),
+
+          // Ô tìm kiếm
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -1646,12 +1654,16 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
             },
           ),
           const SizedBox(height: 16),
+
+          // Danh sách hoặc thông báo trống
           if (displayEmployees.isEmpty)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
-                child: Text('Không tìm thấy nhân viên',
-                    style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Không tìm thấy nhân viên',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             )
           else
@@ -1659,17 +1671,19 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: displayEmployees.length,
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => const Divider(height: 20),
               itemBuilder: (context, index) {
                 final item = displayEmployees[index];
                 final employee = item['employee'] as EmployeeModel;
                 final taskCount = item['taskCount'] as int;
 
+                // Tính phần trăm dựa trên người có nhiều task nhất
                 final maxTasks = sortedEmployees.isNotEmpty
                     ? (sortedEmployees.first['taskCount'] as int)
                     : 1;
                 final percentage = maxTasks > 0 ? (taskCount / maxTasks) : 0.0;
 
+                // Màu thanh tiến độ
                 Color barColor;
                 if (percentage >= 0.8) {
                   barColor = Colors.red;
