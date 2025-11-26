@@ -5,6 +5,7 @@ const EmployeeService = require("../services/employee.service");
 const SendEmailService = require("../services/sendmail.service");
 const ProjectService = require("../services/project.service");
 const TaskTypeService = require("../services/tasktype.service");
+const ConversationService = require("../services/conversation.service");
 const activityLogger = require("../helpers/activitylog.helper");
 
 exports.create = async (req, res, next) => {
@@ -15,6 +16,14 @@ exports.create = async (req, res, next) => {
 
     const taskService = new TaskService();
     const createdTask = await taskService.create(req.body);
+
+    const conversationService = new ConversationService();
+    const defaultConversation =
+      await conversationService.createDefaultTaskConversation(
+        createdTask.task_id,
+        req.employee?.employee_id || req.body.created_by,
+        createdTask.assigned_to
+      );
 
     // Log tạo task
     await activityLogger.createTask(
@@ -122,6 +131,7 @@ exports.create = async (req, res, next) => {
       success: true,
       message: "Tạo nhiệm vụ thành công",
       data: createdTask,
+      default_conversation: defaultConversation,
       notification_sent_to: notificationSentTo,
       email_sent_count: emailSentCount,
     });
