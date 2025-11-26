@@ -21,7 +21,8 @@ exports.getLogs = async (req, res) => {
     const result = await activityLogService.getLogs(
       filter,
       parseInt(page, 10),
-      parseInt(limit, 10)
+      parseInt(limit, 10),
+      { timestamp: -1 }
     );
 
     res.status(200).json({
@@ -55,7 +56,8 @@ exports.getMyLogs = async (req, res) => {
     const result = await activityLogService.getLogs(
       filter,
       parseInt(page, 10),
-      parseInt(limit, 10)
+      parseInt(limit, 10),
+      { timestamp: -1 }
     );
 
     res.status(200).json({
