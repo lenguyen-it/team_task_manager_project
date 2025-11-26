@@ -8,7 +8,7 @@ const router = express.Router();
 
 router
   .route("/")
-  .get(verifyToken, authorize(["admin", "manager"]), EmployeeController.findAll)
+  .get(verifyToken, EmployeeController.findAll)
   .post(
     verifyToken,
     authorize(["admin", "manager"]),
