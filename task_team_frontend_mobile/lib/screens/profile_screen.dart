@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return '';
     }
     final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    final fullUrl = '${ApiConfig.getUrl}/$path';
+    final fullUrl = '${ApiConfig.getUrl}/api/$path';
 
     print('════════════════════════════════');
     print('🖼️ IMAGE DEBUG:');

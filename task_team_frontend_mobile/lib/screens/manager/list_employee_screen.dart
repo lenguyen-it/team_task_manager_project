@@ -51,7 +51,7 @@ class _ListEmployeeScreenState extends State<ListEmployeeScreen> {
   String _getFullImageUrl(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return '';
     final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    return '${ApiConfig.getUrl}/$path';
+    return '${ApiConfig.getUrl}/api/$path';
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/screens/activitylog_screen.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
+import 'package:task_team_frontend_mobile/screens/message/list_message_screen.dart';
 import 'package:task_team_frontend_mobile/screens/profile_screen.dart';
 import '../config/api_config.dart';
 import '../providers/auth_provider.dart';
@@ -17,7 +18,7 @@ class _SettingScreenState extends State<SettingScreen> {
   String _getFullImageUrl(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return '';
     final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-    return '${ApiConfig.getUrl}/$path';
+    return '${ApiConfig.getUrl}/api/$path';
   }
 
   Future<void> _handleLogout() async {
@@ -252,6 +253,20 @@ class _SettingScreenState extends State<SettingScreen> {
                       ],
                     ),
 
+                  const Divider(height: 1),
+                  _buildSettingItem(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'Trò chuyện & Tin nhắn',
+                    subtitle: 'Danh sách cuộc trò chuyện',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ListMessageScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   const Divider(height: 1),
                   _buildSettingItem(
                     icon: Icons.language_outlined,

@@ -117,7 +117,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple.shade400,
+              primary: Colors.blue.shade400,
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
@@ -188,7 +188,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   ),
                                 ),
                                 value: isSelected,
-                                activeColor: Colors.purple.shade400,
+                                activeColor: Colors.blue.shade400,
                                 onChanged: (bool? value) {
                                   setDialogState(() {
                                     if (value == true) {
@@ -642,7 +642,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.purple[300]!, width: 2),
+          borderSide: BorderSide(color: Colors.blue[300]!, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
