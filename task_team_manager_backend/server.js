@@ -30,6 +30,8 @@ require("dotenv").config();
 const app = require("./app_mobile");
 const config = require("./app_mobile/config");
 const mongoose = require("mongoose");
+const http = require("http");
+const { initSocket } = require("./app_mobile/sockets/socket.js");
 
 if (!process.env.JWT_SECRET) {
   console.error("FATAL ERROR: JWT_SECRET is not defined.");
@@ -45,9 +47,17 @@ async function startServer() {
 
     console.log("Connected to MongoDB via Mongoose!");
 
+    // Tạo HTTP server từ Express app
+    const server = http.createServer(app);
+
+    // Khởi tạo Socket.IO
+    initSocket(server);
+
     const PORT = config.app.port || 3000;
-    app.listen(PORT, () => {
+
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log(`Socket.IO is ready!`);
     });
   } catch (error) {
     console.error("Cannot connect to the database!", error);
