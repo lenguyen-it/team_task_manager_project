@@ -5,6 +5,9 @@ const RoleModel = require("./role.model");
 const TaskModel = require("./task.model");
 const Notification = require("./notification.model");
 const ActivityLog = require("./activitylog.model");
+const MessageModel = require("./message.model");
+const ConversationModel = require("./conversation.model");
+const ParticipantConversationModel = require("./participantconversation.model");
 
 module.export = {
   EmployeeModel,
@@ -14,4 +17,7 @@ module.export = {
   RoleModel,
   Notification,
   ActivityLog,
+  MessageModel,
+  ConversationModel,
+  ParticipantConversationModel,
 };

@@ -46,6 +46,22 @@ const employeeSchema = mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
     },
+
+    // Các trường bổ sung cho đoạn chat
+    is_online: {
+      type: Boolean,
+      default: false,
+    },
+
+    last_active: {
+      type: Date,
+      default: Date.now,
+    },
+
+    socket_id: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

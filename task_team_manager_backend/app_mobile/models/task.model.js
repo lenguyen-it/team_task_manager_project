@@ -30,7 +30,7 @@ const taskSchema = new mongoose.Schema(
 
     task_type_id: {
       type: String,
-      ref: "TaskType",
+      ref: "Task_Type",
       required: [true, "Task type id is required"],
     },
 
@@ -64,6 +64,12 @@ const taskSchema = new mongoose.Schema(
     },
 
     attachments: [attachmentSchema],
+
+    default_conversation_id: {
+      type: String,
+      ref: "Conversation",
+      default: null,
+    },
   },
   { timestamps: true }
 );
