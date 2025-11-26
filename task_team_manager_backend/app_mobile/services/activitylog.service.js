@@ -78,7 +78,7 @@ class ActivityLogService {
     const skip = (page - 1) * limit;
 
     const logs = await ActivityLog.find(filter)
-      .sort(sort)
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
