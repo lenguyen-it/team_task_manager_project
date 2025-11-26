@@ -15,6 +15,8 @@ const RoleRoute = require("./app_mobile/routes/role.route");
 const AuthRoute = require("./app_mobile/routes/auth.route");
 const NotificationRoute = require("./app_mobile/routes/notification.route");
 const ActivityLogRoute = require("./app_mobile/routes/activitylog.route");
+const MessageRoutes = require("./app_mobile/routes/message.route");
+const ConversationRoutes = require("./app_mobile/routes/conversation.route");
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +30,8 @@ app.use("/api/roles", RoleRoute);
 app.use("/api/auth", AuthRoute);
 app.use("/api/notifications", NotificationRoute);
 app.use("/api/activitylogs", ActivityLogRoute);
+app.use("/api/messages", MessageRoutes);
+app.use("/api/conversations", ConversationRoutes);
 
 notificationScheduler.start();
 
