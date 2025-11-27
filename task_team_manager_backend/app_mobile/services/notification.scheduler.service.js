@@ -25,7 +25,7 @@ class NotificationScheduler {
           $gt: now,
           $lte: next24Hours,
         },
-        status: { $nin: ["done", "wait", "overdue"] },
+        status: { $nin: ["done", "wait_confirm", "overdue"] },
       });
 
       console.log(`✅ Found ${tasks.length} tasks with deadline near\n`);
@@ -121,7 +121,7 @@ class NotificationScheduler {
 
       const tasks = await this.taskService.find({
         end_date: { $lt: now },
-        status: { $nin: ["done", "wait", "overdue"] },
+        status: { $nin: ["done", "wait_confirm", "overdue"] },
       });
 
       console.log(`✅ Found ${tasks.length} overdue tasks\n`);
