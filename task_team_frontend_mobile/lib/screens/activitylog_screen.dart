@@ -34,7 +34,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity Log'),
+        title: const Text('Nhật ký hoạt động'),
         centerTitle: true,
       ),
       body: Consumer<ActivitylogProvider>(
@@ -57,7 +57,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadActivityLogs,
-                    child: const Text('Retry'),
+                    child: const Text('Tải lại'),
                   ),
                 ],
               ),
@@ -66,7 +66,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
 
           if (provider.activityLogs.isEmpty) {
             return const Center(
-              child: Text('No activity logs found'),
+              child: Text('Không có nhật ký hoạt động nào.'),
             );
           }
 
@@ -138,7 +138,9 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      log.status,
+                                      log.status == 'success'
+                                          ? 'Thành công'
+                                          : 'Thất bại',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: log.status == 'success'
@@ -146,13 +148,13 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                                             : Colors.red[700],
                                       ),
                                     ),
-                                  ),
+                                  )
                                 ],
                               ),
                               const SizedBox(height: 8),
                               // Employee ID
                               Text(
-                                'Employee ID: ${log.employeeId}',
+                                'Mã nhân viên: ${log.employeeId}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey,
@@ -161,7 +163,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                               // Target
                               if (log.targetType != null)
                                 Text(
-                                  'Target: ${log.targetType} (${log.targetId})',
+                                  'Loại: ${log.targetType} (${log.targetId})',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey,
@@ -172,7 +174,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(
-                                    'Description: ${log.description}',
+                                    'Mô tả: ${log.description}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                     ),
@@ -215,17 +217,17 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                   }
                 : null,
             icon: const Icon(Icons.arrow_back),
-            label: const Text('Previous'),
+            label: const Text('Trước'),
           ),
           // Page Info
           Column(
             children: [
               Text(
-                'Page ${provider.currentPage} of ${provider.totalPages}',
+                'Trang ${provider.currentPage} trên ${provider.totalPages}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                'Total: ${provider.totalLogs} logs',
+                'Tổng số: ${provider.totalLogs} logs',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -242,7 +244,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                   }
                 : null,
             icon: const Icon(Icons.arrow_forward),
-            label: const Text('Next'),
+            label: const Text('Sau'),
           ),
         ],
       ),
