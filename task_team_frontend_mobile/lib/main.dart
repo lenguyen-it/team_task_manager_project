@@ -20,7 +20,6 @@ import 'package:task_team_frontend_mobile/screens/login_screen.dart';
 
 Future<void> main() async {
   await dotenv.load();
-  // runApp(const MyApp());
   initializeDateFormatting().then((_) => runApp(MyApp()));
 }
 
@@ -41,109 +40,147 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => ActivitylogProvider()),
-        Provider<IO.Socket>(
-          create: (context) {
-            final auth = context.read<AuthProvider>();
-            final token = auth.token;
 
-            final socket = IO.io(
-              socketUrl,
-              IO.OptionBuilder()
-                  .setTransports(['websocket'])
-                  .disableAutoConnect()
-                  .setExtraHeaders({'Authorization': 'Bearer $token'})
-                  .setAuth({'token': token})
-                  .build(),
-            );
+        // FIX: Tạo Socket wrapper
+        ProxyProvider<AuthProvider, _SocketWrapper?>(
+          create: (context) => null,
+          update: (context, auth, previousWrapper) {
+            final currentToken = auth.token;
 
-            socket.connect();
+            // Nếu chưa có token, không tạo socket
+            if (currentToken == null || currentToken.isEmpty) {
+              previousWrapper?.dispose();
+              return null;
+            }
 
-            // Debug log
-            socket
-                .onConnect((_) => debugPrint('Socket connected: ${socket.id}'));
-            socket.onConnectError(
-                (err) => debugPrint('Socket connect error: $err'));
-            socket.onError((err) => debugPrint('Socket error: $err'));
-            socket.onDisconnect((_) => debugPrint('Socket disconnected'));
+            // Token thay đổi → tạo socket mới
+            if (previousWrapper?.token != currentToken) {
+              debugPrint('🔌 Creating new socket with token');
+              previousWrapper?.dispose();
+              return _SocketWrapper(currentToken);
+            }
 
-            return socket;
+            return previousWrapper;
           },
-          dispose: (context, socket) => socket.disconnect(),
+          dispose: (context, wrapper) => wrapper?.dispose(),
         ),
-        ChangeNotifierProxyProvider2<AuthProvider, IO.Socket,
+
+        // Provide Socket từ wrapper
+        ProxyProvider<_SocketWrapper?, IO.Socket?>(
+          update: (context, wrapper, _) => wrapper?.socket,
+        ),
+
+        // FIX: ConversationProvider với dependencies đúng
+        ChangeNotifierProxyProvider2<AuthProvider, _SocketWrapper?,
             ConversationProvider>(
           create: (context) => ConversationProvider(
             currentEmployeeId: '',
             token: '',
-            socket: Provider.of<IO.Socket>(context, listen: false),
+            socket: null,
           ),
-          update: (context, auth, socket, previous) {
-            // Nếu chưa đăng nhập
-            if (auth.currentEmployee == null || auth.token == null) {
-              previous?.clearAll();
-              return previous ??
-                  ConversationProvider(
-                    currentEmployeeId: '',
-                    token: '',
-                    socket: socket,
-                  );
-            }
+          update: (context, auth, wrapper, previous) {
+            final currentEmployeeId = auth.currentEmployee?.employeeId ?? '';
+            final token = auth.token ?? '';
+            final socket = wrapper?.socket;
 
-            final newEmployeeId = auth.currentEmployee!.employeeId;
-            final newToken = auth.token!;
-
-            if (previous == null ||
-                previous.token != newToken ||
-                previous.currentEmployeeId != newEmployeeId) {
-              final provider = ConversationProvider(
-                currentEmployeeId: newEmployeeId,
-                token: newToken,
-                socket: socket,
+            // Nếu chưa có provider, tạo mới
+            if (previous == null) {
+              debugPrint(
+                  '🎬 Creating ConversationProvider: employee=$currentEmployeeId');
+              return ConversationProvider(
+                currentEmployeeId: currentEmployeeId,
+                token: token,
+                socket: socket != null && socket.connected ? socket : null,
               );
-
-              provider.loadConversations(refresh: true);
-
-              return provider;
             }
 
-            // Cập nhật socket nếu cần
-            if (previous.socket != socket) {
-              previous.socket = socket;
+            // Kiểm tra xem có thay đổi không
+            final employeeChanged =
+                previous.currentEmployeeId != currentEmployeeId;
+            final tokenChanged = previous.token != token;
+            final socketChanged = previous.socket != socket;
+
+            if (employeeChanged || tokenChanged || socketChanged) {
+              debugPrint(
+                  '🔄 Updating ConversationProvider: employee=$currentEmployeeId, token=${token.isNotEmpty}, socket=${socket?.connected}');
+            }
+
+            // Cập nhật thông tin
+            previous.currentEmployeeId = currentEmployeeId;
+            previous.token = token;
+
+            // FIX: Chỉ update socket khi connected
+            if (socket != null && socket.connected) {
+              if (previous.socket != socket) {
+                previous.updateSocket(socket);
+              }
+            } else {
+              previous.socket = null;
+            }
+
+            // Nếu vừa đăng nhập (có employee và token), load conversations
+            if (currentEmployeeId.isNotEmpty &&
+                token.isNotEmpty &&
+                employeeChanged) {
+              debugPrint('✅ User logged in, loading conversations...');
+              Future.microtask(() {
+                previous.loadConversations(refresh: true);
+              });
+            }
+
+            // Nếu đăng xuất, clear data
+            if (currentEmployeeId.isEmpty &&
+                previous.conversations.isNotEmpty) {
+              debugPrint('🔴 User logged out, clearing conversations');
+              previous.clearAll();
             }
 
             return previous;
           },
         ),
-        ChangeNotifierProxyProvider2<AuthProvider, IO.Socket, MessageProvider>(
+
+        // FIX: MessageProvider với dependencies đúng
+        ChangeNotifierProxyProvider2<AuthProvider, _SocketWrapper?,
+            MessageProvider>(
           create: (context) => MessageProvider(
             currentEmployeeId: '',
             token: '',
-            socket: Provider.of<IO.Socket>(context, listen: false),
+            socket: null,
           ),
-          update: (context, auth, socket, previous) {
-            if (auth.currentEmployee == null || auth.token == null) {
-              return previous ??
-                  MessageProvider(
-                    currentEmployeeId: '',
-                    token: '',
-                    socket: socket,
-                  );
-            }
+          update: (context, auth, wrapper, previous) {
+            final currentEmployeeId = auth.currentEmployee?.employeeId ?? '';
+            final token = auth.token ?? '';
+            final socket = wrapper?.socket;
 
-            final newEmployeeId = auth.currentEmployee!.employeeId;
-            final newToken = auth.token!;
-
-            if (previous == null ||
-                previous.token != newToken ||
-                previous.currentEmployeeId != newEmployeeId) {
+            if (previous == null) {
+              debugPrint(
+                  '🎬 Creating MessageProvider: employee=$currentEmployeeId');
               return MessageProvider(
-                currentEmployeeId: newEmployeeId,
-                token: newToken,
-                socket: socket,
+                currentEmployeeId: currentEmployeeId,
+                token: token,
+                socket: socket != null && socket.connected ? socket : null,
               );
             }
 
-            previous.socket = socket;
+            // Cập nhật thông tin
+            previous.currentEmployeeId = currentEmployeeId;
+            previous.token = token;
+
+            // FIX: Chỉ update socket khi connected
+            if (socket != null && socket.connected) {
+              if (previous.socket != socket) {
+                previous.updateSocket(socket);
+              }
+            } else {
+              previous.socket = null;
+            }
+
+            // Clear messages khi đăng xuất
+            if (currentEmployeeId.isEmpty && previous.messages.isNotEmpty) {
+              debugPrint('🔴 User logged out, clearing messages');
+              previous.clearMessages();
+            }
+
             return previous;
           },
         ),
@@ -158,5 +195,51 @@ class MyApp extends StatelessWidget {
         home: const LoginScreen(),
       ),
     );
+  }
+}
+
+// Wrapper class để track token với socket
+class _SocketWrapper {
+  final String? token;
+  final IO.Socket socket;
+
+  _SocketWrapper(this.token) : socket = _createSocketInstance(token);
+
+  static IO.Socket _createSocketInstance(String? token) {
+    final socket = IO.io(
+      socketUrl,
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .setExtraHeaders(token != null && token.isNotEmpty
+              ? {'Authorization': 'Bearer $token'}
+              : {})
+          .setAuth(token != null && token.isNotEmpty ? {'token': token} : {})
+          .build(),
+    );
+
+    if (token != null && token.isNotEmpty) {
+      socket.connect();
+
+      socket.on('connect', (_) {
+        debugPrint('✅ Socket Connected! ID: ${socket.id}');
+        debugPrint('🔑 Auth sent: ${socket.auth}');
+      });
+
+      socket
+          .onConnectError((err) => debugPrint('❌ Socket connect error: $err'));
+      socket.onError((err) => debugPrint('❌ Socket error: $err'));
+      socket.onDisconnect((_) => debugPrint('🔌 Socket disconnected'));
+    } else {
+      debugPrint('⚠️ No token, socket not connected');
+    }
+
+    return socket;
+  }
+
+  void dispose() {
+    debugPrint('🔌 Disposing socket...');
+    socket.disconnect();
+    socket.dispose();
   }
 }
