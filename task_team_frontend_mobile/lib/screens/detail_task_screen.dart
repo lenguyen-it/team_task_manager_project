@@ -39,13 +39,19 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
   List<File> _selectedFiles = [];
 
   // Danh sách trạng thái
+  // final List<Map<String, String>> _statusOptions = [
+  //   {'value': 'wait_confirm', 'label': 'Chờ xác nhận'},
+  //   {'value': 'in_progress', 'label': 'Đang thực hiện'},
+  //   {'value': 'done', 'label': 'Hoàn thành'},
+  //   {'value': 'pause', 'label': 'Tạm dừng'},
+  //   {'value': 'new_task', 'label': 'Công việc mới'},
+  //   {'value': 'overdue', 'label': 'Quá hạn'},
+  // ];
+
   final List<Map<String, String>> _statusOptions = [
-    {'value': 'wait', 'label': 'Chờ xác nhận'},
-    {'value': 'in_progress', 'label': 'Đang thực hiện'},
-    {'value': 'done', 'label': 'Hoàn thành'},
+    {'value': 'wait_confirm', 'label': 'Chờ xác nhận'},
     {'value': 'pause', 'label': 'Tạm dừng'},
-    {'value': 'new_task', 'label': 'Công việc mới'},
-    {'value': 'overdue', 'label': 'Quá hạn'},
+    {'value': 'in_progress', 'label': 'Đang thực hiện'},
   ];
 
   @override
@@ -54,7 +60,14 @@ class _DetailTaskScreenState extends State<DetailTaskScreen> {
     _descriptionController = TextEditingController(
       text: widget.task.description ?? '',
     );
-    _selectedStatus = widget.task.status.value;
+
+    // Danh sách các status được phép chọn
+    final allowedStatuses = ['wait_confirm', 'pause', 'in_progress'];
+
+    _selectedStatus = allowedStatuses.contains(widget.task.status.value)
+        ? widget.task.status.value
+        : 'in_progress';
+
     _currentTask = widget.task;
     _loadData();
   }
