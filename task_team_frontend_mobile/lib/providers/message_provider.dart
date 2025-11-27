@@ -7,8 +7,8 @@ class MessageProvider with ChangeNotifier {
   final MessageService _messageService = MessageService();
 
   IO.Socket? socket;
-  final String currentEmployeeId;
-  final String token;
+  late String currentEmployeeId; // FIX: Changed from final to late
+  late String token; // FIX: Changed from final to late
 
   List<MessageModel> _messages = [];
   List<MessageModel> get messages => _messages;
@@ -43,6 +43,9 @@ class MessageProvider with ChangeNotifier {
 
   final Function(MessageModel)? onMessageSent;
 
+  // FIX: Track socket listeners
+  bool _socketListenersSetup = false;
+
   MessageProvider({
     required this.currentEmployeeId,
     required this.token,
@@ -53,8 +56,9 @@ class MessageProvider with ChangeNotifier {
   }
 
   void _initializeSocket() {
-    if (socket != null) {
+    if (socket != null && !_socketListenersSetup) {
       _setupSocketListeners();
+      _socketListenersSetup = true;
     }
   }
 
@@ -89,10 +93,18 @@ class MessageProvider with ChangeNotifier {
       _error = data['message'] ?? 'Có lỗi xảy ra';
       notifyListeners();
     });
+
+    debugPrint('✅ Message socket listeners setup complete');
   }
 
   Future<void> loadMessages(String conversationId,
       {bool refresh = false}) async {
+    // FIX: Check token before loading
+    if (token.isEmpty) {
+      debugPrint('⚠️ Cannot load messages: No token');
+      return;
+    }
+
     if (refresh) {
       _currentPage = 1;
       _messages.clear();
@@ -486,6 +498,32 @@ class MessageProvider with ChangeNotifier {
     }
   }
 
+  // Thêm method này vào MessageProvider class
+
+  void updateSocket(IO.Socket newSocket) {
+    debugPrint('🔄 Updating socket in MessageProvider');
+
+    // Dispose old socket listeners if exists
+    if (socket != null) {
+      socket!.off('new_message');
+      socket!.off('message_read');
+      socket!.off('all_messages_read');
+      socket!.off('message_deleted');
+      socket!.off('typing');
+      socket!.off('stop_typing');
+      socket!.off('error');
+    }
+
+    // Update socket
+    socket = newSocket;
+
+    // Reset listener flag và setup lại
+    _socketListenersSetup = false;
+    _setupSocketListeners();
+
+    notifyListeners();
+  }
+
   void clearMessages() {
     _messages.clear();
     _currentPage = 1;
@@ -494,6 +532,7 @@ class MessageProvider with ChangeNotifier {
     _hasMore = true;
     _unreadCount = 0;
     _error = null;
+    _socketListenersSetup = false;
     notifyListeners();
   }
 
