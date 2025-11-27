@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_team_frontend_mobile/screens/manager/list_employee_screen.dart';
 import 'package:task_team_frontend_mobile/screens/manager/list_project_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/list_task_screen.dart';
 import 'package:task_team_frontend_mobile/screens/notification_screen.dart';
 
 class ListScreen extends StatefulWidget {
@@ -63,7 +64,14 @@ class _ListScreenState extends State<ListScreen> {
               _buildCard(
                 icon: Icons.assignment,
                 title: 'Công việc',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ListTaskScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _buildCard(
