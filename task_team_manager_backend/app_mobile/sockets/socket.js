@@ -2,6 +2,8 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const Message = require("../models/message.model");
 const Conversation = require("../models/conversation.model");
+const MessageService = require("../services/message.service");
+const messageService = new MessageService();
 
 let io;
 const userSockets = new Map();
@@ -14,19 +16,29 @@ const initSocket = (server) => {
     },
   });
 
+  // FIX: Middleware để authenticate socket connection
   io.use((socket, next) => {
+    // Thử lấy token từ nhiều nguồn
     const token =
       socket.handshake.auth.token ||
-      socket.handshake.headers.authorization?.split(" ")[1];
+      socket.handshake.headers.authorization?.split(" ")[1] ||
+      socket.handshake.query.token;
 
     console.log("🔐 Checking auth...");
     console.log("Auth object:", socket.handshake.auth);
-    console.log("Headers:", socket.handshake.headers.authorization);
-    console.log("Token:", token);
+    console.log(
+      "Headers Authorization:",
+      socket.handshake.headers.authorization
+    );
+    console.log("Query token:", socket.handshake.query.token);
+    console.log(
+      "Extracted token:",
+      token ? `${token.substring(0, 20)}...` : "null"
+    );
 
     if (!token) {
-      console.log("❌ No token provided");
-      return next(new Error("Authentication error"));
+      console.log("❌ No token provided in any location");
+      return next(new Error("Authentication error: No token provided"));
     }
 
     try {
@@ -39,13 +51,13 @@ const initSocket = (server) => {
 
       console.log("✅ Auth success:", {
         employee_id: socket.employee_id,
-        decoded: decoded,
+        role_id: decoded.role_id,
       });
 
       next();
     } catch (error) {
       console.log("❌ Invalid token:", error.message);
-      return next(new Error("Invalid token"));
+      return next(new Error(`Invalid token: ${error.message}`));
     }
   });
 
@@ -56,7 +68,6 @@ const initSocket = (server) => {
       "Employee:",
       socket.employee_id
     );
-    console.log("📋 Employee Data:", socket.employeeData);
 
     userSockets.set(socket.employee_id, socket.id);
 
@@ -76,6 +87,59 @@ const initSocket = (server) => {
     });
 
     // Gửi tin nhắn
+    // socket.on("send_message", async (data) => {
+    //   try {
+    //     const {
+    //       conversation_id,
+    //       content,
+    //       receiver_id,
+    //       type = "text",
+    //       temp_id,
+    //     } = data;
+    //     const sender_id = socket.employee_id;
+
+    //     if (!sender_id || !conversation_id || !content) {
+    //       socket.emit("error", { message: "Thiếu thông tin bắt buộc" });
+    //       return;
+    //     }
+
+    //     console.log(`📤 Message from ${sender_id} in ${conversation_id}`);
+
+    //     const newMessage = await Message.create({
+    //       sender_id,
+    //       receiver_id,
+    //       conversation_id,
+    //       content,
+    //       type,
+    //       status: "sent",
+    //     });
+
+    //     await Conversation.findOneAndUpdate(
+    //       { conversation_id },
+    //       { last_message_at: new Date() }
+    //     );
+
+    //     // FIX: Chuyển message thành plain object
+    //     const messageObj = newMessage.toObject
+    //       ? newMessage.toObject()
+    //       : newMessage;
+
+    //     // Emit tin nhắn mới đến TẤT CẢ clients trong room (bao gồm cả người gửi)
+    //     io.to(conversation_id).emit("new_message", {
+    //       message: {
+    //         ...messageObj,
+    //         _id: messageObj._id.toString(),
+    //       },
+    //       temp_id,
+    //     });
+
+    //     console.log(`✅ Message sent successfully: ${newMessage._id}`);
+    //   } catch (error) {
+    //     console.error("❌ Error sending message:", error);
+    //     socket.emit("error", { message: "Không thể gửi tin nhắn" });
+    //   }
+    // });
+
     socket.on("send_message", async (data) => {
       try {
         const {
@@ -92,55 +156,67 @@ const initSocket = (server) => {
           return;
         }
 
-        console.log(`📤 Message from ${sender_id} in ${conversation_id}`);
+        console.log(`Message from ${sender_id} in ${conversation_id}`);
 
-        const newMessage = await Message.create({
+        // DÙNG INSTANCE ĐÃ TẠO SẴN (không new mỗi lần)
+        const newMessage = await messageService.createMessage({
           sender_id,
           receiver_id,
           conversation_id,
           content,
           type,
-          status: "sent",
         });
 
-        await Conversation.findOneAndUpdate(
-          { conversation_id },
-          { last_message_at: new Date() }
-        );
+        // Chuyển thành plain object để emit an toàn
+        const messageObj = newMessage.toObject
+          ? newMessage.toObject()
+          : { ...newMessage };
+        if (messageObj._id) messageObj._id = messageObj._id.toString();
 
-        // Emit tin nhắn mới
+        // Emit realtime cho tất cả trong room
         io.to(conversation_id).emit("new_message", {
-          message: newMessage.toObject ? newMessage.toObject() : newMessage,
+          message: messageObj,
           temp_id,
         });
 
-        console.log(`✅ Message sent successfully: ${newMessage._id}`);
+        // Gửi ack cho người gửi (nếu dùng temp_id)
+        if (temp_id) {
+          socket.emit("message_ack", {
+            temp_id,
+            message: messageObj,
+          });
+        }
+
+        console.log(`Message sent + unread tăng: ${newMessage._id}`);
       } catch (error) {
-        console.error("❌ Error sending message:", error);
+        console.error("Error sending message:", error);
         socket.emit("error", { message: "Không thể gửi tin nhắn" });
       }
     });
 
     // Người dùng đang nhập
     socket.on("typing", (data) => {
-      socket.to(data.conversation_id).emit("employee_typing", {
-        employee_id: data.employee_id,
-        isTyping: true,
+      const { conversation_id, employee_id } = data;
+
+      // Emit đến TẤT CẢ trong room NGOẠI TRỪ người gửi
+      socket.to(conversation_id).emit("typing", {
+        conversation_id,
+        employee_id,
       });
-      console.log(
-        `⌨️ ${data.employee_id} is typing in ${data.conversation_id}`
-      );
+
+      console.log(`⌨️ ${employee_id} is typing in ${conversation_id}`);
     });
 
     // Người dùng ngừng nhập
     socket.on("stop_typing", (data) => {
-      socket.to(data.conversation_id).emit("employee_typing", {
-        employee_id: data.employee_id,
-        isTyping: false,
+      const { conversation_id, employee_id } = data;
+
+      socket.to(conversation_id).emit("stop_typing", {
+        conversation_id,
+        employee_id,
       });
-      console.log(
-        `⌨️ ${data.employee_id} stopped typing in ${data.conversation_id}`
-      );
+
+      console.log(`⌨️ ${employee_id} stopped typing in ${conversation_id}`);
     });
 
     // Rời conversation
@@ -153,7 +229,7 @@ const initSocket = (server) => {
       );
     });
 
-    // CÁCH XỬ LÝ MỚI: Mark messages as read
+    // Mark messages as read
     socket.on("mark_messages_read", async (data) => {
       try {
         const { conversation_id } = data;
@@ -183,7 +259,7 @@ const initSocket = (server) => {
           `✅ Updated ${result.modifiedCount} messages to seen in ${conversation_id}`
         );
 
-        // Emit event đến TẤT CẢ clients trong conversation (bao gồm cả chính mình)
+        // Emit event đến TẤT CẢ clients trong conversation
         io.to(conversation_id).emit("all_messages_read", {
           conversation_id: conversation_id,
           employee_id: employee_id,

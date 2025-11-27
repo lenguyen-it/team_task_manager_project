@@ -844,6 +844,8 @@ class ConversationService {
       totalUnread += conversation.unread_count[employee_id] || 0;
     });
 
+    console.log(`\nTỔNG UNREAD: ${totalUnread}`);
+
     return totalUnread;
   }
 }
