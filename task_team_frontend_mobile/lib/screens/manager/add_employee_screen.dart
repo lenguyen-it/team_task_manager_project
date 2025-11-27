@@ -94,7 +94,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple[300]!,
+              primary: Colors.blue[300]!,
               onPrimary: Colors.white,
             ),
           ),

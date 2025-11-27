@@ -194,7 +194,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple[300]!,
+              primary: Colors.blue[300]!,
               onPrimary: Colors.white,
             ),
           ),
@@ -262,7 +262,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.purple[100],
+                      color: Colors.blue[100],
                       shape: BoxShape.circle,
                     ),
                     child: ClipOval(
@@ -275,10 +275,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   errorBuilder: (_, __, ___) => Icon(
                                       Icons.person,
                                       size: 50,
-                                      color: Colors.purple[300]),
+                                      color: Colors.blue[300]),
                                 )
                               : Icon(Icons.person,
-                                  size: 50, color: Colors.purple[300])),
+                                  size: 50, color: Colors.blue[300])),
                     ),
                   ),
                   Positioned(
@@ -289,7 +289,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.purple[300],
+                          color: Colors.blue[300],
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -464,7 +464,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.purple[300]!, width: 2),
+              borderSide: BorderSide(color: Colors.blue[300]!, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -542,7 +542,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[100],
-            suffixIcon: Icon(Icons.calendar_today, color: Colors.purple[300]),
+            suffixIcon: Icon(Icons.calendar_today, color: Colors.blue[300]),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -553,7 +553,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.purple[300]!, width: 2),
+              borderSide: BorderSide(color: Colors.blue[300]!, width: 2),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

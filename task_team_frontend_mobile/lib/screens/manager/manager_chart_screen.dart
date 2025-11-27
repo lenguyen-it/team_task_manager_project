@@ -415,7 +415,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
             'Tháng này',
             '$monthTasks công việc',
             Icons.calendar_month,
-            Colors.purple,
+            Colors.indigo,
           ),
         ],
       ),

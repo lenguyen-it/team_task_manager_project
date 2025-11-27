@@ -130,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.purple[100],
+                          color: Colors.blue[100],
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
@@ -145,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     return Icon(
                                       Icons.person,
                                       size: 50,
-                                      color: Colors.purple[300],
+                                      color: Colors.blue[300],
                                     );
                                   },
                                   loadingBuilder:
@@ -173,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : Icon(
                                   Icons.person,
                                   size: 50,
-                                  color: Colors.purple[300],
+                                  color: Colors.blue[300],
                                 ),
                         ),
                       ),

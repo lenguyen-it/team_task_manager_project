@@ -147,7 +147,7 @@ class _ManagerDetailTaskScreenState extends State<ManagerDetailTaskScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple.shade400,
+              primary: Colors.blue.shade400,
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
@@ -218,7 +218,7 @@ class _ManagerDetailTaskScreenState extends State<ManagerDetailTaskScreen> {
                                   ),
                                 ),
                                 value: isSelected,
-                                activeColor: Colors.purple.shade400,
+                                activeColor: Colors.blue.shade400,
                                 onChanged: (bool? value) {
                                   setDialogState(() {
                                     if (value == true) {
@@ -914,7 +914,7 @@ class _ManagerDetailTaskScreenState extends State<ManagerDetailTaskScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.purple[300]!, width: 2),
+          borderSide: BorderSide(color: Colors.blue[300]!, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
