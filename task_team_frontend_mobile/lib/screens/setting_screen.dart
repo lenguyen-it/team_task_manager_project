@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_team_frontend_mobile/screens/activitylog_screen.dart';
 import 'package:task_team_frontend_mobile/screens/login_screen.dart';
+import 'package:task_team_frontend_mobile/screens/manager/confirm_task_screen.dart';
 import 'package:task_team_frontend_mobile/screens/message/list_message_screen.dart';
 import 'package:task_team_frontend_mobile/screens/profile_screen.dart';
 import '../config/api_config.dart';
@@ -122,7 +123,7 @@ class _SettingScreenState extends State<SettingScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.purple[100],
+                    backgroundColor: Colors.blue[100],
                     child: ClipOval(
                       child: employee?.image != null &&
                               employee!.image!.isNotEmpty
@@ -154,7 +155,7 @@ class _SettingScreenState extends State<SettingScreen> {
                                   style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.purple),
+                                      color: Colors.blue),
                                 );
                               },
                             )
@@ -165,7 +166,7 @@ class _SettingScreenState extends State<SettingScreen> {
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.purple,
+                                color: Colors.blue,
                               ),
                             ),
                     ),
@@ -244,9 +245,11 @@ class _SettingScreenState extends State<SettingScreen> {
                           title: 'Duyệt công việc',
                           subtitle: 'Xem và duyệt các công việc chờ phê duyệt',
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Chức năng đang phát triển')),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ConfirmTaskScreen(),
+                              ),
                             );
                           },
                         ),
