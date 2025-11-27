@@ -60,7 +60,14 @@ const taskSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["in_progress", "new_task", "pause", "done", "wait"],
+      enum: [
+        "in_progress",
+        "new_task",
+        "pause",
+        "done",
+        "wait_confirm",
+        "overdue",
+      ],
     },
 
     attachments: [attachmentSchema],
