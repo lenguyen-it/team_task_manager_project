@@ -8,8 +8,8 @@ class ConversationProvider with ChangeNotifier {
   final ConversationService _conversationService = ConversationService();
 
   IO.Socket? socket;
-  final String currentEmployeeId;
-  final String token;
+  late String currentEmployeeId;
+  late String token;
 
   List<ConversationModel> _conversations = [];
   List<ConversationModel> get conversations => _conversations;
@@ -38,14 +38,14 @@ class ConversationProvider with ChangeNotifier {
   int _totalUnreadCount = 0;
   int get totalUnreadCount => _totalUnreadCount;
 
-  // Track conversation đang được xem
   String? _activeConversationId;
   String? get activeConversationId => _activeConversationId;
 
-  // Task conversations
   final Map<String, List<ConversationModel>> _taskConversations = {};
   Map<String, List<ConversationModel>> get taskConversations =>
       _taskConversations;
+
+  bool _socketListenersSetup = false;
 
   ConversationProvider({
     required this.currentEmployeeId,
@@ -63,8 +63,9 @@ class ConversationProvider with ChangeNotifier {
   // ===================== SOCKET INITIALIZATION =====================
 
   void _initializeSocket() {
-    if (socket != null) {
+    if (socket != null && !_socketListenersSetup) {
       _setupSocketListeners();
+      _socketListenersSetup = true;
     }
   }
 
@@ -115,10 +116,11 @@ class ConversationProvider with ChangeNotifier {
       _handleNewMessage(data);
     });
 
-    // THÊM: Lắng nghe event all_messages_read để cập nhật unread count
     socket!.on('all_messages_read', (data) {
       _handleAllMessagesRead(data);
     });
+
+    debugPrint('✅ Socket listeners setup complete');
   }
 
   // ===================== LOAD CONVERSATIONS =====================
@@ -127,6 +129,11 @@ class ConversationProvider with ChangeNotifier {
     bool refresh = false,
     String? type,
   }) async {
+    if (token.isEmpty) {
+      debugPrint('⚠️ Cannot load conversations: No token');
+      return;
+    }
+
     if (refresh) {
       _currentPage = 1;
       _conversations.clear();
@@ -140,6 +147,9 @@ class ConversationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint(
+          '📡 Loading conversations: page=$_currentPage, token=${token.isNotEmpty}');
+
       final result = await _conversationService.getConversations(
         token,
         page: _currentPage,
@@ -161,6 +171,31 @@ class ConversationProvider with ChangeNotifier {
       _totalCount = pagination['total'] ?? 0;
       _hasMore = _currentPage < _totalPages;
 
+      debugPrint('✅ Loaded ${newConversations.length} conversations');
+
+      // DEBUG: In ra unread count của từng conversation
+      debugPrint('🔍 === DEBUG UNREAD COUNT ===');
+      for (var conv in _conversations) {
+        debugPrint(
+            '  Conv: ${conv.conversationId}, unreadCountForEmployee: ${conv.unreadCountForEmployee}');
+      }
+
+      // TÍNH TỔNG unread count từ conversations
+      final calculatedTotal = _conversations.fold<int>(
+        0,
+        (sum, conv) => sum + (conv.unreadCountForEmployee ?? 0),
+      );
+      debugPrint(
+          '🔢 Calculated total unread from conversations: $calculatedTotal');
+
+      // FIX: Sử dụng unread count tính từ conversations thay vì từ API
+      if (calculatedTotal != _totalUnreadCount) {
+        _totalUnreadCount = calculatedTotal;
+        debugPrint(
+            '📊 Total unread count updated from conversations: $_totalUnreadCount');
+      }
+
+      // Vẫn gọi API để so sánh
       await loadTotalUnreadCount();
     } catch (e) {
       _error = e.toString();
@@ -416,10 +451,27 @@ class ConversationProvider with ChangeNotifier {
   // ===================== UNREAD COUNT =====================
 
   Future<void> loadTotalUnreadCount() async {
+    if (token.isEmpty) {
+      debugPrint('⚠️ Cannot load unread count: No token');
+      return;
+    }
+
     try {
-      _totalUnreadCount = await _conversationService.getTotalUnreadCount(token);
-      debugPrint('📊 Total unread count loaded: $_totalUnreadCount');
-      notifyListeners();
+      final apiCount = await _conversationService.getTotalUnreadCount(token);
+
+      debugPrint('🔍 === UNREAD COUNT COMPARISON ===');
+      debugPrint('  API returned: $apiCount');
+      debugPrint('  Current _totalUnreadCount: $_totalUnreadCount');
+
+      // FIX: Ưu tiên sử dụng giá trị đã tính từ conversations
+      // Chỉ cập nhật nếu API trả về giá trị lớn hơn
+      if (apiCount > _totalUnreadCount) {
+        _totalUnreadCount = apiCount;
+        debugPrint('📊 Updated total unread from API: $_totalUnreadCount');
+        notifyListeners();
+      } else {
+        debugPrint('✅ Keeping calculated value: $_totalUnreadCount');
+      }
     } catch (e) {
       debugPrint('❌ Error loading total unread count: $e');
     }
@@ -431,7 +483,7 @@ class ConversationProvider with ChangeNotifier {
     );
 
     if (index != -1) {
-      final oldCount = _conversations[index].unreadCountForEmployee ?? 0;
+      final oldCount = _conversations[index].unreadCountForEmployee;
       final difference = count - oldCount;
 
       _conversations[index].unreadCountForEmployee = count;
@@ -449,8 +501,9 @@ class ConversationProvider with ChangeNotifier {
     final index = conversations.indexWhere(
       (c) => c.conversationId == conversationId,
     );
+
     if (index != -1) {
-      final oldCount = conversations[index].unreadCountForEmployee ?? 0;
+      final oldCount = conversations[index].unreadCountForEmployee;
 
       if (oldCount > 0) {
         conversations[index].unreadCountForEmployee = 0;
@@ -586,9 +639,15 @@ class ConversationProvider with ChangeNotifier {
 
   void _handleNewMessage(dynamic data) {
     try {
+      debugPrint('📩 Processing new_message...');
+      debugPrint('🔍 Raw data: $data');
+
       final message = data['message'];
       final conversationId = message['conversation_id'];
       final senderId = message['sender_id'];
+
+      debugPrint(
+          '📬 New message: conv=$conversationId, sender=$senderId, current=$currentEmployeeId');
 
       final index = _conversations.indexWhere(
         (c) => c.conversationId == conversationId,
@@ -598,11 +657,22 @@ class ConversationProvider with ChangeNotifier {
         final conversation = _conversations[index];
         final newLastMessage = MessageModel.fromJson(message);
 
-        // LOGIC MỚI: Chỉ tăng unread count nếu:
-        // 1. Tin nhắn KHÔNG phải từ bản thân
-        // 2. Conversation KHÔNG đang được xem
-        final shouldIncreaseUnread = senderId != currentEmployeeId &&
-            _activeConversationId != conversationId;
+        final isFromOther = senderId != currentEmployeeId;
+        final isNotActive = _activeConversationId != conversationId;
+        final shouldIncreaseUnread = isFromOther && isNotActive;
+
+        final currentUnread = conversation.unreadCountForEmployee;
+        final newUnread =
+            shouldIncreaseUnread ? currentUnread + 1 : currentUnread;
+
+        debugPrint('📢 Unread calculation:');
+        debugPrint('  - senderId: $senderId');
+        debugPrint('  - currentEmployeeId: $currentEmployeeId');
+        debugPrint('  - activeConversationId: $_activeConversationId');
+        debugPrint('  - isFromOther: $isFromOther');
+        debugPrint('  - isNotActive: $isNotActive');
+        debugPrint('  - shouldIncrease: $shouldIncreaseUnread');
+        debugPrint('  - current: $currentUnread → new: $newUnread');
 
         final updatedConversation = ConversationModel(
           conversationId: conversation.conversationId,
@@ -615,48 +685,43 @@ class ConversationProvider with ChangeNotifier {
           unreadCount: conversation.unreadCount,
           participants: conversation.participants,
           lastMessage: newLastMessage,
-          unreadCountForEmployee: shouldIncreaseUnread
-              ? (conversation.unreadCountForEmployee ?? 0) + 1
-              : conversation.unreadCountForEmployee,
+          unreadCountForEmployee: newUnread,
           otherEmployee: conversation.otherEmployee,
         );
 
-        // Di chuyển conversation lên đầu
         _conversations.removeAt(index);
         _conversations.insert(0, updatedConversation);
 
-        // Cập nhật total unread count
         if (shouldIncreaseUnread) {
           _totalUnreadCount++;
           debugPrint(
-              '📬 New message in $conversationId, unread: ${updatedConversation.unreadCountForEmployee}, total: $_totalUnreadCount');
+              '📬 Badge updated: conv=$conversationId, unread=$newUnread, total=$_totalUnreadCount');
         } else {
-          debugPrint(
-              '✅ New message in active conversation $conversationId, not increasing unread');
+          debugPrint('✅ Message in active conversation, no badge increase');
         }
 
         notifyListeners();
       } else {
-        // Nếu conversation không có trong list, reload
-        debugPrint('⚠️ Conversation not found, reloading...');
+        debugPrint('⚠️ Conversation $conversationId not found in list');
         loadConversations(refresh: true);
       }
-    } catch (e) {
-      debugPrint('❌ Error handling new message in conversation: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error handling new message: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
-  // THÊM: Xử lý event all_messages_read
   void _handleAllMessagesRead(dynamic data) {
     try {
       final conversationId = data['conversation_id'];
       final employeeId = data['employee_id'];
 
-      debugPrint('👁️ All messages read in $conversationId by $employeeId');
+      debugPrint(
+          '👁️ All messages read: conv=$conversationId, employee=$employeeId, current=$currentEmployeeId');
 
-      // Nếu chính mình đọc tin nhắn, reset unread count
       if (employeeId == currentEmployeeId) {
         resetUnreadCount(conversationId);
+        debugPrint('✅ Reset unread count for conversation $conversationId');
       }
     } catch (e) {
       debugPrint('❌ Error handling all messages read: $e');
@@ -717,6 +782,31 @@ class ConversationProvider with ChangeNotifier {
     }
   }
 
+  void updateSocket(IO.Socket newSocket) {
+    debugPrint('🔄 Updating socket in ConversationProvider');
+
+    if (socket != null) {
+      socket!.off('new_conversation');
+      socket!.off('new_task_conversation');
+      socket!.off('conversation_updated');
+      socket!.off('participants_added');
+      socket!.off('added_to_conversation');
+      socket!.off('participant_removed');
+      socket!.off('removed_from_conversation');
+      socket!.off('participant_left');
+      socket!.off('participant_joined');
+      socket!.off('conversation_deleted');
+      socket!.off('new_message');
+      socket!.off('all_messages_read');
+    }
+
+    socket = newSocket;
+    _socketListenersSetup = false;
+    _setupSocketListeners();
+
+    notifyListeners();
+  }
+
   void clearAll() {
     _conversations.clear();
     _taskConversations.clear();
@@ -728,6 +818,7 @@ class ConversationProvider with ChangeNotifier {
     _totalUnreadCount = 0;
     _activeConversationId = null;
     _error = null;
+    _socketListenersSetup = false;
     notifyListeners();
   }
 
