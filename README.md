@@ -122,7 +122,7 @@ Hệ thống quản lý dự án và công việc toàn diện cho các nhóm l�
 - Dart SDK: 3.6.2
 - Node.js: v22.19.0
 - MongoDB: mongosh --version 2.5.7
-- Android SDK (cho phát triển Android)
+- Android SDK (cho phát triển Android) Platform android-36, build-tools 36.0.0
 - Xcode (cho phát triển iOS - chỉ trên macOS)
 - Java JDK-17
 
