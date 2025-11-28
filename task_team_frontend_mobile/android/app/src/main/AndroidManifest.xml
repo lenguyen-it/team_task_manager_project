@@ -5,9 +5,9 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
-        android:label="task_team_frontend_mobile"
+        android:label="Task  Manager"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/logocty">
         <activity
             android:name=".MainActivity"
             android:exported="true"
