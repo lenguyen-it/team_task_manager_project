@@ -385,7 +385,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Dashboard',
+            'Tổng quan',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -493,7 +493,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Daily Timeline',
+                  'Timeline hàng ngày',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
@@ -509,7 +509,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
             const Padding(
               padding: EdgeInsets.all(32),
               child: Center(
-                child: Text('Không có task nào',
+                child: Text('Không có công việc nào',
                     style: TextStyle(color: Colors.grey)),
               ),
             )
@@ -771,7 +771,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Chart',
+                'Biểu đồ',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               Container(
@@ -1438,7 +1438,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
           Row(
             children: [
               const Text(
-                'Deadline',
+                'Công việc gần đến hạn',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 8),
@@ -1614,7 +1614,7 @@ class _ManagerChartScreenState extends State<ManagerChartScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'WorkLoad',
+            'Phân bổ công việc',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
