@@ -40,7 +40,9 @@ exports.getAllNotifications = async (req, res) => {
     const { page = 1, limit = 20, unread, employee_id } = req.query;
 
     const targetEmployeeId =
-      req.employee.role_id === "admin" ? employee_id : req.employee.employee_id;
+      req.employee.role_id === "admin" || req.employee.role_id === "manager"
+        ? employee_id
+        : req.employee.employee_id;
 
     const result = await notificationService.getAllNotifications({
       page: parseInt(page, 10),
@@ -67,14 +69,14 @@ exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
     const employee_id = req.employee.employee_id;
-    const role_id = req.employee.role_id; 
+    const role_id = req.employee.role_id;
 
     const notificationService = new NotificationService();
     const notification = await notificationService.markAsRead(
       id,
       employee_id,
       role_id
-    ); 
+    );
 
     res.status(200).json({
       success: true,
@@ -93,10 +95,10 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
   try {
     const employee_id = req.employee.employee_id;
-    const role_id = req.employee.role_id; 
+    const role_id = req.employee.role_id;
 
     const notificationService = new NotificationService();
-    await notificationService.markAllAsRead(employee_id, role_id); 
+    await notificationService.markAllAsRead(employee_id, role_id);
 
     res.status(200).json({
       success: true,

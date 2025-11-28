@@ -17,7 +17,7 @@ router
   .route("/")
   .get(
     verifyToken,
-    authorize(["admin"]),
+    authorize(["admin", "manager"]),
     NotificationController.getAllNotifications
   );
 
