@@ -546,7 +546,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 child: ElevatedButton(
                                   onPressed: _isLoading ? null : _saveTask,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF9B59B6),
+                                    backgroundColor: Colors.blue,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
