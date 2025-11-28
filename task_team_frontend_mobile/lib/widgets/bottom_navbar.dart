@@ -110,27 +110,33 @@ class _BottomNavbarState extends State<BottomNavbar> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: config.widgets[_selectedScreenIndex],
-      // Wrap BottomNavigationBar và FAB trong một Builder để cô lập khỏi SnackBar
-      bottomNavigationBar: Builder(
-        builder: (context) {
-          return Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              // Bottom Navigation Bar
-              _buildBottomNav(config),
+      body: Stack(
+        children: [
+          // Nội dung chính
+          config.widgets[_selectedScreenIndex],
 
-              // FAB positioned above the bottom bar
-              if (config.hasFloatingButton)
-                Positioned(
-                  bottom: 75, // Vị trí để FAB nổi lên trên BottomAppBar
-                  child: _buildFloatingButton(config),
-                ),
-            ],
-          );
-        },
+          // FAB cố định ở vị trí tuyệt đối
+          if (config.hasFloatingButton)
+            Positioned(
+              right: 16,
+              bottom: 10, // Cố định phía trên bottom nav
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AddTaskScreen(),
+                    ),
+                  );
+                },
+                backgroundColor: const Color(0xFF5DADE2),
+                elevation: 4,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add, size: 32, color: Colors.white),
+              ),
+            ),
+        ],
       ),
+      bottomNavigationBar: _buildBottomNav(config),
     );
   }
 
@@ -196,22 +202,6 @@ class _BottomNavbarState extends State<BottomNavbar> {
       backgroundColor: Colors.white,
       elevation: 8,
       items: config.items,
-    );
-  }
-
-  Widget _buildFloatingButton(RoleNavConfig config) {
-    return FloatingActionButton(
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const AddTaskScreen(),
-          ),
-        );
-      },
-      backgroundColor: const Color(0xFF5DADE2),
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: const Icon(Icons.add, size: 32, color: Colors.white),
     );
   }
 }
