@@ -99,7 +99,7 @@ class ActivitylogProvider with ChangeNotifier {
   Future<void> refresh(String token, {String? roleId}) async {
     _currentPage = 1; // Reset về trang 1
     final isAdmin = roleId != null &&
-        (roleId.toLowerCase() == 'admin' || roleId.toUpperCase() == 'R01');
+        (roleId.toLowerCase() == 'admin' || roleId.toLowerCase() == 'manager');
 
     if (isAdmin) {
       await getAllActivityLogs(token: token, page: 1);
@@ -113,7 +113,8 @@ class ActivitylogProvider with ChangeNotifier {
     if (_currentPage < _totalPages) {
       final nextPage = _currentPage + 1;
       final isAdmin = roleId != null &&
-          (roleId.toLowerCase() == 'admin' || roleId.toUpperCase() == 'R01');
+          (roleId.toLowerCase() == 'admin' ||
+              roleId.toLowerCase() == 'manager');
 
       if (isAdmin) {
         await getAllActivityLogs(token: token, page: nextPage);
@@ -128,7 +129,8 @@ class ActivitylogProvider with ChangeNotifier {
     if (_currentPage > 1) {
       final previousPage = _currentPage - 1;
       final isAdmin = roleId != null &&
-          (roleId.toLowerCase() == 'admin' || roleId.toUpperCase() == 'R01');
+          (roleId.toLowerCase() == 'admin' ||
+              roleId.toLowerCase() == 'manager');
 
       if (isAdmin) {
         await getAllActivityLogs(token: token, page: previousPage);
